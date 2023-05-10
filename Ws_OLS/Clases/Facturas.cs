@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -12,14 +13,14 @@ using System.Web;
 
 namespace Ws_OLS.Clases
 {
-	public class Facturas
-	{
-		//METODOS DE LLAMADA
+    public class Facturas
+    {
+        //METODOS DE LLAMADA
 
-		private Database Db;
+        private Database Db;
 
-		string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
-		//string connectionStringH = ConfigurationManager.ConnectionStrings["IPESH"].ConnectionString;
+        string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
+        //string connectionStringH = ConfigurationManager.ConnectionStrings["IPESH"].ConnectionString;
 
         //public Facturas()
         //{
@@ -29,54 +30,54 @@ namespace Ws_OLS.Clases
 
         //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
         public DataTable CantidadFacturas(int ruta, string FC_tipo, string FC_estado, string fecha, int facNum, int doc)
-		{
-			DataTable dt = new DataTable();
+        {
+            DataTable dt = new DataTable();
 
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery;
-				
-				if (doc == 7) //7 ANULACIONES
-				{
-					if (facNum == -1)// ANULACIONES MASIVAS
-					{
-						sqlQuery = @"SELECT *
+                cnn.Open();
+                string sqlQuery;
+
+                if (doc == 7) //7 ANULACIONES
+                {
+                    if (facNum == -1)// ANULACIONES MASIVAS
+                    {
+                        sqlQuery = @"SELECT *
 									  FROM HandHeld.FacturaEBajada
 									  WHERE idRuta=@ruta 
 									  AND CAST(Fecha AS DATE)=@fecha 
                                       AND TipoDocumento=@FC
                                       AND estado=@estado
 									  AND FeLAnulacionNumero IS NULL";
-					}
-					else          //ANULACIONES INDIVIDUALES
-					{
-						sqlQuery = @"SELECT *
+                    }
+                    else          //ANULACIONES INDIVIDUALES
+                    {
+                        sqlQuery = @"SELECT *
 									  FROM HandHeld.FacturaEBajada
 									  WHERE idRuta=@ruta 
 									  AND CAST(Fecha AS DATE)=@fecha 
                                       AND TipoDocumento=@FC
                                       AND estado=@estado
 									  AND Numero=@numero";
-					}
-				}
-				else
-				{
-					if (facNum == -1)
-					{
-						sqlQuery = @"SELECT *
+                    }
+                }
+                else
+                {
+                    if (facNum == -1)
+                    {
+                        sqlQuery = @"SELECT *
 									  FROM HandHeld.FacturaEBajada
 									  WHERE idRuta=@ruta 
 									  AND CAST(Fecha AS DATE)=@fecha 
                                       AND TipoDocumento=@FC
                                       AND estado=@estado
                                       AND FELAutorizacion IS NULL";
-					}
-					else
-					{
-						sqlQuery = @"SELECT *
+                    }
+                    else
+                    {
+                        sqlQuery = @"SELECT *
 									  FROM HandHeld.FacturaEBajada
 									  WHERE idRuta=@ruta 
 									  AND CAST(Fecha AS DATE)=@fecha 
@@ -84,1292 +85,1477 @@ namespace Ws_OLS.Clases
                                       AND estado=@estado
 									  AND Numero=@numero
                                       AND FELAutorizacion IS NULL";
-					}
-				}
-				
+                    }
+                }
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@FC", FC_tipo);
-					cmd.Parameters.AddWithValue("@estado", FC_estado);
-					if (facNum != -1)
-					{
-						cmd.Parameters.AddWithValue("@numero", facNum);
-					}
-					SqlDataAdapter ds = new SqlDataAdapter(cmd);
-					ds.Fill(dt);
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@FC", FC_tipo);
+                    cmd.Parameters.AddWithValue("@estado", FC_estado);
+                    if (facNum != -1)
+                    {
+                        cmd.Parameters.AddWithValue("@numero", facNum);
+                    }
+                    SqlDataAdapter ds = new SqlDataAdapter(cmd);
+                    ds.Fill(dt);
                     //dsSumario.Tables.Add(dt);
 
 
                 }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return dt;
-		}
+            return dt;
+        }
 
-		//OBTIENE RESOLUCION 
-		public string GetResolucion(int ruta, string idSerie)
-		{
-			string resolucion = "";
-            using (SqlConnection cnn = new SqlConnection(connectionString)) 
+        //OBTIENE RESOLUCION 
+        public string GetResolucion(int ruta, string idSerie)
+        {
+            string resolucion = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT resolucion 
+                cnn.Open();
+                string sqlQuery = @"SELECT resolucion 
                                     FROM Facturacion.Series 
                                     WHERE idSerie=@idSerie AND idRuta=@ruta";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@idSerie", idSerie);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						resolucion = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        resolucion = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return resolucion;
-		}
+            return resolucion;
+        }
 
-		//OBTIENE RESTINICIO
-		public string GetResInicio(int ruta, string idSerie)
-		{
-			string resInicio = "";
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT numeroDel 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
-
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@idSerie", idSerie);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						resInicio = dr[0].ToString();
-					}
-				}
-
-				cnn.Close();
-			}
-
-			return resInicio;
-		}
-
-		//OBTIENE RESTFIN
-		public string GetResFin(int ruta, string idSerie)
-		{
-			string data = "";
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT numeroAl 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
-
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@idSerie", idSerie);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
-
-				cnn.Close();
-			}
-
-			return data;
-		}
-
-		//OBTIENE RESTFIN
-		public string GetRestFecha(int ruta, string idSerie)
-		{
-			string data = "";
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT FechaAutorizacion 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
-
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@idSerie", idSerie);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
-
-				cnn.Close();
-			}
-
-			return data;
-		}
-
-		//OBTIENE NIT
-		public string GetNit(int ruta, string idSerie)
-		{
-			string data = "";
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
+        //OBTIENE TOKEN DE FECHA ACTUAL
+        public string GetTokenNow(string fecha)
+        {
+            string resolucion = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
                 cnn.Open();
-				string sqlQuery = @"SELECT nit 
+                string sqlQuery = @"SELECT ISNULL((SELECT Token 
+                                    FROM Facturacion.TokenFEL 
+                                    WHERE CAST(Fecha AS DATE) =@Fecha), 0) Token";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@Fecha", fecha);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        resolucion = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return resolucion;
+        }
+
+
+        //INSERTAR TOKEN EN LA BASE DE DATOS
+        public void InsertaToken(string TokenI)
+        {
+
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series 
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"INSERT INTO Facturacion.TokenFEL (Fecha,Token) VALUES
+	                                (GETDATE(),@Token)";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@Token", TokenI);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
+
+
+        //OBTIENE RESTINICIO
+        public string GetResInicio(int ruta, string idSerie)
+        {
+            string resInicio = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT numeroDel 
                                     FROM Facturacion.Series 
                                     WHERE idRuta=@ruta AND idSerie=@idSerie";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@idSerie", idSerie);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        resInicio = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return resInicio;
+        }
 
-		//OBTIENE FECHA EMISION
-		public string GetFechaEmision(int ruta, int idTipo, string fecha, string numero)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE RESTFIN
+        public string GetResFin(int ruta, string idSerie)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT FechaHora 
+                cnn.Open();
+                string sqlQuery = @"SELECT numeroAl 
+                                    FROM Facturacion.Series 
+                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE RESTFIN
+        public string GetRestFecha(int ruta, string idSerie)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT FechaAutorizacion 
+                                    FROM Facturacion.Series 
+                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE NIT
+        public string GetNit(int ruta, string idSerie)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT nit 
+                                    FROM Facturacion.Series 
+                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE FECHA EMISION
+        public string GetFechaEmision(int ruta, int idTipo, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT FechaHora 
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@idTipo", idTipo);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@idTipo", idTipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE GETIDEMPLEADO
-		public string GetIdEmpleado(int ruta, int idTipo, string fecha, string numero)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE GETIDEMPLEADO
+        public string GetIdEmpleado(int ruta, int idTipo, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT idempleado 
+                cnn.Open();
+                string sqlQuery = @"SELECT idempleado 
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@idTipo", idTipo);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@idTipo", idTipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE NUMERO SERIES
-		public string GetNumSerie(int ruta, string idSerie)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT numeroSerie 
+        //OBTIENE NUMERO SERIES
+        public string GetNumSerie(int ruta, string idSerie)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT numeroSerie 
                                     FROM Facturacion.Series
                                     WHERE idRuta=@ruta AND idSerie=@idSerie";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@idSerie", idSerie);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE NOMBRE DE ESTABLECIMIENTO
-		public string GetNombreEstablecimiento(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT NombreNegocio
+        //OBTIENE NOMBRE DE ESTABLECIMIENTO
+        public string GetNombreEstablecimiento(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT NombreNegocio
 									FROM SAP.Clientes
 									WHERE IdCliente=@idCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE NOMBRE DEL USUARIO
-		public string GetNombreUsuario(string id)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT nombreEmpleado
+        //OBTIENE NOMBRE DEL USUARIO
+        public string GetNombreUsuario(string id)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT nombreEmpleado
 									FROM EmpleadosHH
 									WHERE IdEmpleado=@id";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@id", id);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@id", id);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE TIPO DE DOCUMENTOS
-		public string GetTipoDocumento(int ruta, int idTipo, string fecha, string numero)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE TIPO DE DOCUMENTOS
+        public string GetTipoDocumento(int ruta, int idTipo, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT TipoDocumento 
+                cnn.Open();
+                string sqlQuery = @"SELECT TipoDocumento 
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@idTipo", idTipo);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@idTipo", idTipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE NUIT CLIENTE
-		public string GetNITCliente(string cliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CD.DocumentoCliente 
+        //OBTIENE NUIT CLIENTE
+        public string GetNITCliente(string cliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CD.DocumentoCliente 
 									FROM Clientes.Documentos CD 
 									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente 
 									WHERE CD.IdTiposDocumento =1 AND C.IdCliente =@IdCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@IdCliente", cliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@IdCliente", cliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE DUI CLIENTE
-		public string GetDUI(string cliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CD.DocumentoCliente 
+        //OBTIENE DUI CLIENTE
+        public string GetDUI(string cliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CD.DocumentoCliente 
 									FROM Clientes.Documentos CD 
 									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente 
 									WHERE CD.IdTiposDocumento =2 AND C.IdCliente =@IdCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@IdCliente", cliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@IdCliente", cliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE NRC CLIENTE
-		public string GetNRC(string cliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CD.DocumentoCliente 
+        //OBTIENE NRC CLIENTE
+        public string GetNRC(string cliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CD.DocumentoCliente 
 									FROM Clientes.Documentos CD 
 									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente 
 									WHERE CD.IdTiposDocumento =3 AND C.IdCliente =@IdCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@IdCliente", cliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@IdCliente", cliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE CODIGO CLIENTE
-		public string GetCodigoCliente(int ruta, string fecha, string numero)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE CODIGO CLIENTE
+        public string GetCodigoCliente(int ruta, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT IdCliente 
+                cnn.Open();
+                string sqlQuery = @"SELECT IdCliente 
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE CODIGO CLIENTE
-		public string GetNombreCliente(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT NombreCompleto 
+        //OBTIENE CODIGO CLIENTE
+        public string GetNombreCliente(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT NombreCompleto 
                                     FROM dbo.Clientes
                                     WHERE IdCliente=@idCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE DIRECCION 
-		public string GetDireccion(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT Direccion 
+        //OBTIENE DIRECCION 
+        public string GetDireccion(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Direccion 
                                     FROM DireccionesClientes
                                     WHERE IdCliente=@idCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE DEPARTAMENTO 
-		public string GetDepartamento(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CD.NombreCompleto 
+        //OBTIENE DEPARTAMENTO 
+        public string GetDepartamento(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CD.NombreCompleto 
 									FROM DireccionesClientes DC 
 									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento 
 									WHERE DC.IdCliente =@idCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE DEPARTAMENTO 
-		public string GetMunicipio(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CD.NombreCompleto 
+        //OBTIENE DEPARTAMENTO 
+        public string GetMunicipio(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CD.NombreCompleto 
 									FROM DireccionesClientes DC 
 									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento 
 									WHERE DC.IdCliente =@idCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE GIRO NEGOCIO 
-		public string GetGiroNegocio(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT giro_negocio
+        //OBTIENE GIRO NEGOCIO 
+        public string GetGiroNegocio(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT giro_negocio
 									FROM SAP.Clientes
 									WHERE IdCliente=@idCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE CONDICION PAGO
-		public string GetCondicionPago(int ruta, string fecha, string numero)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE CONDICION PAGO
+        public string GetCondicionPago(int ruta, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT IdCondicionPago
+                cnn.Open();
+                string sqlQuery = @"SELECT IdCondicionPago
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE CONDICION PAGO
-		public double GetVentaTotal(int ruta, string fecha, string numero)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE CONDICION PAGO
+        public double GetVentaTotal(int ruta, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT Total
+                cnn.Open();
+                string sqlQuery = @"SELECT Total
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return Convert.ToDouble(data);
-		}
-
-
-		//OBTIENE MONTO EN LETRAS
-		public string GetMontoLetras(double monto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT dbo.Numeros_a_Letras(@monto)";
-
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@monto", monto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
-
-				cnn.Close();
-			}
-
-			return data;
-		}
+            return Convert.ToDouble(data);
+        }
 
 
-		public double GetCantidadTotal(int ruta, string numero)
-		{
-			string data = "";
-
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE MONTO EN LETRAS
+        public string GetMontoLetras(double monto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT SUM(Unidades)
+                cnn.Open();
+                string sqlQuery = @"SELECT dbo.Numeros_a_Letras(@monto)";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@monto", monto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+
+        public double GetCantidadTotal(int ruta, string numero)
+        {
+            string data = "";
+
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT SUM(Unidades)
                                     FROM HandHeld.FacturaDBajada 
                                     WHERE idRuta=@ruta AND Numero=@numero ";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return Convert.ToDouble(data);
-		}
+            return Convert.ToDouble(data);
+        }
 
 
-		//OBTIENE CODIGO DE CLIENTE PRINCIPAL
-		public string GetCodigoClientePrincipal(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CodigoClientePrincipal
+        //OBTIENE CODIGO DE CLIENTE PRINCIPAL
+        public string GetCodigoClientePrincipal(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CodigoClientePrincipal
 									FROM SAP.Clientes
 									WHERE IdCliente=@idCliente";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE CENTRO
-		public string GetCentro(string idRuta)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT Centro
+        //OBTIENE CENTRO
+        public string GetCentro(string idRuta)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Centro
 									FROM dbo.Rutas
 									WHERE IdRuta=@idRuta";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idRuta", idRuta);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idRuta", idRuta);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE CENTRO
-		public string GetZonaRuta(string idRuta)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT DescripcionZona
+        //OBTIENE CENTRO
+        public string GetZonaRuta(string idRuta)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT DescripcionZona
 									FROM Catalogos.Zonas Z
 									INNER JOIN dbo.Rutas R ON R.IdZonaRuta=Z.IdZonaRuta
 									WHERE IdRuta=@idRuta";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idRuta", idRuta);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idRuta", idRuta);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE RUTA VENTA
-		public string GetRutaVenta(string idCliente)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				//string sqlQuery = @"SELECT idruta
-				//					FROM dbo.RutasClientes
-				//					WHERE idcliente=@idCliente";
-				string sqlQuery = @"SELECT Ruta RutaVenta 
+        //OBTIENE RUTA VENTA
+        public string GetRutaVenta(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                //string sqlQuery = @"SELECT idruta
+                //					FROM dbo.RutasClientes
+                //					WHERE idcliente=@idCliente";
+                string sqlQuery = @"SELECT Ruta RutaVenta 
 								   FROM dbo.rutasclientes rc
                                    INNER JOIN dbo.rutas r ON rc.idruta = r.idruta
 							       WHERE idcliente = @idCliente AND rc.idtiporuta = 1";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idCliente", idCliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE RUTA REPARTO
-		public string GetRutaReparto(string idRuta)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CodigoRuta
+        //OBTIENE RUTA REPARTO
+        public string GetRutaReparto(string idRuta)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CodigoRuta
 									FROM dbo.Rutas
 									WHERE IdRuta=@idRuta AND IdTipoRuta=2";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idRuta", idRuta);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idRuta", idRuta);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
-		//OBTIENE RUTA REPARTO
-		public string GetCodigoRutaVenta(string idRuta)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT CodigoRuta
+        //OBTIENE RUTA REPARTO
+        public string GetCodigoRutaVenta(string idRuta)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CodigoRuta
 									FROM dbo.Rutas
 									WHERE IdRuta=@idRuta AND IdTipoRuta=1";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@idRuta", idRuta);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idRuta", idRuta);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE SECUENCIA
-		public string GetSecuencia(string num)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT Secuencia
+        //OBTIENE SECUENCIA
+        public string GetSecuencia(string num)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Secuencia
 									FROM dbo.Pedidos
 									WHERE IdPedido=@num1";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@num1", num);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@num1", num);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
+        /***************CAMPOS NUEVOS FEL****************/
 
-
-		/**********************DETALLE***********************/
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="ruta"></param>
-		/// <param name="numero"></param>
-		/// <param name="fecha"></param>
-		/// <returns></returns>
-
-		//OBTIENE DETALLE POR FACTURAS
-		public DataTable CantidadDetalle(int ruta, string numero, string fecha)
-		{
-			DataTable dt = new DataTable();
-
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //CAMPO FEL-OBTIENE SI ES RUTA FEL O NO
+        public bool GetRutaFEL(int ruta)
+        {
+            bool felData = false;
+            string campo = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT IdProductos
+                cnn.Open();
+                string sqlQuery = @"SELECT FacturaFelOLS 
+									FROM Pedidos.Rutas 
+									WHERE IdRuta=@ruta AND IdTipoRuta =2";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        campo = dr[0].ToString();
+                    }
+
+                    if (campo == "1")
+                    {
+                        felData = true;
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return felData;
+        }
+
+        //CAMPO FEL-OBTIENE CODIGO DE GENERACION
+        public string GetCodigoGeneracion(int ruta, string idTipo, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT FELSerie 
+                                    FROM HandHeld.FacturaEBajada
+                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND TipoDocumento=@idTipo";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@idTipo", idTipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+
+        /**********************DETALLE***********************/
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ruta"></param>
+        /// <param name="numero"></param>
+        /// <param name="fecha"></param>
+        /// <returns></returns>
+
+        //OBTIENE DETALLE POR FACTURAS
+        public DataTable CantidadDetalle(int ruta, string numero, string fecha)
+        {
+            DataTable dt = new DataTable();
+
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT IdProductos
                                     FROM HandHeld.FacturaDBajada 
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND Numero=@numero
 									ORDER BY IdProductos ASC";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					SqlDataAdapter ds = new SqlDataAdapter(cmd);
-					ds.Fill(dt);
-					//dsSumario.Tables.Add(dt);
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataAdapter ds = new SqlDataAdapter(cmd);
+                    ds.Fill(dt);
+                    //dsSumario.Tables.Add(dt);
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return dt;
-		}
+            return dt;
+        }
 
-		//OBTIENE CANTIDAD DE UNIDADES POR CADA DETALLE
-		public double GetCantidadDetalle(int ruta, string numero, string producto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE CANTIDAD DE UNIDADES POR CADA DETALLE
+        public double GetCantidadDetalle(int ruta, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT Unidades 
+                cnn.Open();
+                string sqlQuery = @"SELECT Unidades 
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return Convert.ToDouble(data);
-		}
+            return Convert.ToDouble(data);
+        }
 
 
-		//OBTIENE NOMBRE DEL PRODUCTO
-		public string GetNombreProducto(string producto)
-		{
-			string data = "";
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT NombreCompleto 
+        //OBTIENE NOMBRE DEL PRODUCTO
+        public string GetNombreProducto(string producto)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT NombreCompleto 
                                     FROM SAP.Productos 
                                     WHERE idProducto = @producto";
-				
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
 
-				cnn.Close();
-			}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-			return data;
-		}
+                cnn.Close();
+            }
 
-		//OBTIENE PESO DEL PRODUCTO 
-		public double GetPesoProductoDetalle(int ruta, string numero, string producto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+            return data;
+        }
+
+        //OBTIENE PESO DEL PRODUCTO 
+        public double GetPesoProductoDetalle(int ruta, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT Peso 
+                cnn.Open();
+                string sqlQuery = @"SELECT Peso 
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return Convert.ToDouble(data);
-		}
+            return Convert.ToDouble(data);
+        }
 
-		//OBTIENE PRECIO UNITARIO DEL DETALLE
-		public decimal GetPrecioUnitarioDetalle(int ruta, string numero, string producto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE PRECIO UNITARIO DEL DETALLE
+        public decimal GetPrecioUnitarioDetalle(int ruta, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
+                cnn.Open();
                 //string sqlQuery = @"SELECT (PrecioUnitario + DescuentoPorPrecio)
                 string sqlQuery = @"SELECT FORMAT((PrecioUnitario + DescuentoPorPrecio),'N4', 'es-GT')
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return Convert.ToDecimal(data);
-		}
+            return Convert.ToDecimal(data);
+        }
 
-		//OBTIENE PRECIO UNITARIO DEL DETALLE
-		public decimal GetPrecioUnitarioDetalleFAC(int ruta, string numero, string producto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE PRECIO UNITARIO DEL DETALLE
+        public decimal GetPrecioUnitarioDetalleFAC(int ruta, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-                
+
 
                 cnn.Open();
                 //string sqlQuery = @"SELECT ROUND(((PrecioUnitario * 0.13) + preciounitario + DescuentoPorPrecio),2)
                 //                                FROM HandHeld.FacturaDBajada
                 //                                WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
-                string sqlQuery= @"SELECT FORMAT((CASE WHEN P.UnidadFacturacion= 1 THEN D.Valor/ D.Unidades ELSE D.Valor / D.Peso END),'N4', 'es-GT')
+                string sqlQuery = @"SELECT FORMAT((CASE WHEN P.UnidadFacturacion= 1 THEN D.Valor/ D.Unidades ELSE D.Valor / D.Peso END),'N4', 'es-GT')
                                   FROM HandHeld.FacturaDBajada D
                                   INNER JOIN Reparto.VistaProducto P ON P.IdProductos = D.IdProductos
                                   WHERE D.idRuta=@ruta AND D.Numero=@numero AND D.IdProductos=@producto";
 
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
+                cnn.Close();
                 //Double dd = Convert.ToDouble(data.Replace(',', '.'), CultureInfo.InvariantCulture);
             }
 
-			return Convert.ToDecimal(data);
-		}
+            return Convert.ToDecimal(data);
+        }
 
-		//OBTIENE PLU DEL PRODUCTO
-		public string GetPLUProducto(string prod, string cliente)
-		{
-			string data = "";
-			using (SqlConnection cnn = new SqlConnection(connectionString)) 
-			{
-				cnn.Open();
-				string sqlQuery = @"SELECT PLU 
+        //OBTIENE PLU DEL PRODUCTO
+        public string GetPLUProducto(string prod, string cliente)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT PLU 
                                     FROM Pedidos.ProductosCodigosPLU 
                                     WHERE IdProductos = @prod AND IdCliente=@cliente";
 
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@prod", prod);
-					cmd.Parameters.AddWithValue("@cliente", cliente);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@prod", prod);
+                    cmd.Parameters.AddWithValue("@cliente", cliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
 
 
-		//OBTIENE VENTAS GRAVADAS DETALLE
-		public double GetVentasGravadasDetalle(int ruta, string numero, string producto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE VENTAS GRAVADAS DETALLE
+        public double GetVentasGravadasDetalle(int ruta, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT Valor 
+                cnn.Open();
+                string sqlQuery = @"SELECT Valor 
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return Convert.ToDouble(data);
-		}
+            return Convert.ToDouble(data);
+        }
 
-		//OBTIENE VENTAS GRAVADAS DETALLE CREDITO FISCAL
-		public double GetVentasGravadasDetalleCCF(int ruta, string numero, string producto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE VENTAS GRAVADAS DETALLE CREDITO FISCAL
+        public double GetVentasGravadasDetalleCCF(int ruta, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT (Valor-Iva) 
+                cnn.Open();
+                string sqlQuery = @"SELECT (Valor-Iva) 
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return Convert.ToDouble(data);
-		}
+            return Convert.ToDouble(data);
+        }
 
-		//OBTIENE DESCUENTO POR PRECIO
-		public string GetDescuentoPrecioDetalle(int ruta, string fecha, string numero, string producto)
-		{
-			string data = "";
-			//using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-			using (SqlConnection cnn = new SqlConnection(connectionString))
-			//using (SqlConnection cnn = new SqlConnection(connectionString))
+        //OBTIENE DESCUENTO POR PRECIO
+        public string GetDescuentoPrecioDetalle(int ruta, string fecha, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-				cnn.Open();
-				string sqlQuery = @"SELECT DescuentoPorPrecio 
+                cnn.Open();
+                string sqlQuery = @"SELECT DescuentoPorPrecio 
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND IdProductos=@producto";
 
-				using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-				{
-					cmd.Parameters.AddWithValue("@ruta", ruta);
-					cmd.Parameters.AddWithValue("@fecha", fecha);
-					cmd.Parameters.AddWithValue("@numero", numero);
-					cmd.Parameters.AddWithValue("@producto", producto);
-					SqlDataReader dr = cmd.ExecuteReader();
-					while (dr.Read())
-					{
-						data = dr[0].ToString();
-					}
-				}
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
-				cnn.Close();
-			}
+                cnn.Close();
+            }
 
-			return data;
-		}
+            return data;
+        }
+
+        //CAMPO FEL-OBTIENE IVA DE LA LINEA
+        public decimal GetIVALineaFac(int ruta, string fecha, string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT ISNULL(Iva, 0) Iva
+                                    FROM HandHeld.FacturaDBajada
+                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND IdProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
 
-		//public string resolucion(int rr, int idSe)
-		//{
-		//	StringBuilder st = new StringBuilder();
 
-		//	st.AppendLine("SELECT 0 idRuta , 'Seleccione' Ruta, '' OficinaVenta UNION ALL  ");
-		//	st.AppendLine("(SELECT CodigoCompatibilidad idRuta, CONVERT(VARCHAR(6),CodigoCompatibilidad), OficinaVenta FROM catalogos.canaldistribucion) ORDER BY idRuta  ");
-		//	using (DbCommand Cm = Db.GetSqlStringCommand(st.ToString()))
-		//	{
-		//		Db.ExecuteNonQuery(Cm);
-		//		return Db.GetParameterValue(Cm, "ruta");
+                cnn.Close();
+            }
 
-		//	}
+            return Convert.ToDecimal(data);
+        }
+
+        //CAMPO FEL-OBTIENE UNIDADA FACTURACION
+        public int GetUnidadFacturacion(string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT UnidadFacturacion 
+									FROM HandHeld.VistaProducto 
+									WHERE IdProductos =@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
 
 
-		//}
-	}
+
+                cnn.Close();
+            }
+
+            return Convert.ToInt32(data);
+        }
+
+
+        //public string resolucion(int rr, int idSe)
+        //{
+        //	StringBuilder st = new StringBuilder();
+
+        //	st.AppendLine("SELECT 0 idRuta , 'Seleccione' Ruta, '' OficinaVenta UNION ALL  ");
+        //	st.AppendLine("(SELECT CodigoCompatibilidad idRuta, CONVERT(VARCHAR(6),CodigoCompatibilidad), OficinaVenta FROM catalogos.canaldistribucion) ORDER BY idRuta  ");
+        //	using (DbCommand Cm = Db.GetSqlStringCommand(st.ToString()))
+        //	{
+        //		Db.ExecuteNonQuery(Cm);
+        //		return Db.GetParameterValue(Cm, "ruta");
+
+        //	}
+
+
+        //}
+    }
 }

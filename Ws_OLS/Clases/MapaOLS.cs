@@ -252,11 +252,11 @@ namespace Ws_OLS.Clases
         public string descripcion { get; set; }
         public object codTributo { get; set; }
         public List<string> tributos { get; set; }
-        public double precioUnitario { get; set; }
+        public decimal precioUnitario { get; set; }
         public double ventasNoSujetas { get; set; }
-        public double ivaItem { get; set; }
+        public decimal ivaItem { get; set; }
         public string delAl { get; set; }
-        public double exportaciones { get; set; }
+        public string exportaciones { get; set; }
         public string numDocRel { get; set; }
         public int uniMedidaCodigo { get; set; }
         public double ventasExentas { get; set; }
