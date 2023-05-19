@@ -17,8 +17,8 @@ namespace Ws_OLS.Clases
         public string fechaDoc { get; set; }
         public int numDoc { get; set; }
         public string tipoDoc { get; set; }
-        public string nit { get; set; }
-        public string correlativointerno { get; set; }
+        public string nitEmisor { get; set; }
+        public string correlativoInterno { get; set; }
         public string fechaAnulacion { get; set; }
         public int tipoAnulacion { get; set; }
         public string codigoGeneracion { get; set; }
@@ -28,7 +28,7 @@ namespace Ws_OLS.Clases
         public string tipDocResponsable { get; set; }
         public string numDocResponsable { get; set; }
         public string nombreSolicita { get; set; }
-        public string tipDocsolicita { get; set; }
+        public string tipDocSolicita { get; set; }
         public string numDocSolicita { get; set; }
     }
 }

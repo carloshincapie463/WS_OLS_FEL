@@ -20,7 +20,7 @@ namespace Ws_OLS.Clases
 
 
         //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
-        public void CambiaEstadoFCCCF(int ruta, string FC, string fecha, string numero, string sello)
+        public void CambiaEstadoFCCCF(int ruta, string FC, string fecha, string numero, string sello, string control, string generacion)
         {
 
             using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -30,7 +30,7 @@ namespace Ws_OLS.Clases
                 //                                FROM Facturacion.Series 
                 //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
                 string sqlQuery = @"UPDATE HandHeld.FacturaEBajada
-									SET FELAutorizacion=@sello
+									SET FELAutorizacion=@sello, FELSerie=@generacion, FELNumero=@control
 									WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND TipoDocumento=@FC AND Numero=@numero";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -40,6 +40,38 @@ namespace Ws_OLS.Clases
                     cmd.Parameters.AddWithValue("@FC", FC);
                     cmd.Parameters.AddWithValue("@numero", numero);
                     cmd.Parameters.AddWithValue("@sello", sello);
+                    cmd.Parameters.AddWithValue("@generacion", generacion);
+                    cmd.Parameters.AddWithValue("@control", control);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
+        //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
+        public void CambiaEstadoFCCCFPreImpresa(int ruta, string fecha, string numero, string sello, string control, string generacion)
+        {
+
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series 
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"UPDATE Facturacion.FacturaE
+									SET FELAutorizacion=@Sello, FELNumero=@NumControl, FELSerie=@Generacion
+									WHERE idRutaReparto=@ruta AND CAST(FechaFactura AS DATE)=@fecha AND idFactura=@numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@Sello", sello);
+                    cmd.Parameters.AddWithValue("@NumControl", control);
+                    cmd.Parameters.AddWithValue("@Generacion", generacion);
                     cmd.ExecuteNonQuery();
                     //dsSumario.Tables.Add(dt);
                 }

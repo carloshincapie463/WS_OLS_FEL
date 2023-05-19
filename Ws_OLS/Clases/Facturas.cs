@@ -29,7 +29,7 @@ namespace Ws_OLS.Clases
 
 
         //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
-        public DataTable CantidadFacturas(int ruta, string FC_tipo, string FC_estado, string fecha, int facNum, int doc)
+        public DataTable CantidadFacturas(int ruta, string FC_tipo, string FC_estado, string fecha, long facNum, int doc)
         {
             DataTable dt = new DataTable();
 
@@ -112,6 +112,87 @@ namespace Ws_OLS.Clases
             return dt;
         }
 
+        //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
+        public DataTable CantidadFacturasPreImpresas(int ruta, string fecha, long facNum, int doc)
+        {
+            DataTable dt = new DataTable();
+
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery;
+
+                if (doc == 7) //7 ANULACIONES
+                {
+                    if (facNum == -1)// ANULACIONES MASIVAS
+                    {
+                        sqlQuery = @"SELECT *
+									  FROM HandHeld.FacturaEBajada
+									  WHERE idRuta=@ruta 
+									  AND CAST(Fecha AS DATE)=@fecha 
+                                      AND TipoDocumento=@FC
+                                      AND estado=@estado
+									  AND FeLAnulacionNumero IS NULL";
+                    }
+                    else          //ANULACIONES INDIVIDUALES
+                    {
+                        sqlQuery = @"SELECT *
+									  FROM HandHeld.FacturaEBajada
+									  WHERE idRuta=@ruta 
+									  AND CAST(Fecha AS DATE)=@fecha 
+                                      AND TipoDocumento=@FC
+                                      AND estado=@estado
+									  AND Numero=@numero";
+                    }
+                }
+                else
+                {
+                    if (facNum == -1)
+                    {
+                        sqlQuery = @"SELECT *
+									  FROM Facturacion.FacturaE 
+									  WHERE idRutaReparto=@ruta 
+									  AND CAST(FechaFactura AS DATE)=@fecha 
+                                      AND Estado=0
+                                      AND FELAutorizacion IS NULL";
+                    }
+                    else
+                    {
+                        sqlQuery = @"SELECT *
+									  FROM Facturacion.FacturaE 
+									  WHERE idRutaReparto=@ruta 
+									  AND CAST(FechaFactura AS DATE)=@fecha 
+                                      AND Estado=0
+									  AND idFactura=@numero
+                                      AND FELAutorizacion IS NULL";
+                    }
+                }
+
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    //cmd.Parameters.AddWithValue("@estado", FC_estado);
+                    if (facNum != -1)
+                    {
+                        cmd.Parameters.AddWithValue("@numero", facNum);
+                    }
+                    SqlDataAdapter ds = new SqlDataAdapter(cmd);
+                    ds.Fill(dt);
+                    //dsSumario.Tables.Add(dt);
+
+
+                }
+
+                cnn.Close();
+            }
+
+            return dt;
+        }
+
         //OBTIENE RESOLUCION 
         public string GetResolucion(int ruta, string idSerie)
         {
@@ -121,7 +202,7 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT resolucion 
                                     FROM Facturacion.Series 
-                                    WHERE idSerie=@idSerie AND idRuta=@ruta";
+                                    WHERE idSerie=@idSerie AND idRuta=@ruta AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -697,6 +778,34 @@ namespace Ws_OLS.Clases
             return data;
         }
 
+        public string GetIdDepartamento(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CD.CodigoDepartamento 
+									FROM DireccionesClientes DC 
+									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento 
+									WHERE DC.IdCliente =@idCliente";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
 
         //OBTIENE DEPARTAMENTO 
         public string GetMunicipio(string idCliente)
@@ -710,6 +819,34 @@ namespace Ws_OLS.Clases
 									FROM DireccionesClientes DC 
 									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento 
 									WHERE DC.IdCliente =@idCliente";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        public string GetIdMunicipio(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT RIGHT(CD.CodigoMunicipio, 2) as CodigoMunicipio
+									FROM DireccionesClientes DC 
+									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento 
+									WHERE DC.IdCliente =@idCliente AND CD.IdMunicipio =DC.IdMunicipio ";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -743,6 +880,62 @@ namespace Ws_OLS.Clases
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        public string GetGiroNegocio2(string idCliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT ActividadEconomica
+									FROM SAP.PersonaT 
+                                    WHERE CodFuncion = 15 AND CodCliente=@idCliente";
+        
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    //cmd.Parameters.AddWithValue("@idCliente", idCliente.Trim().ToString());
+                    cmd.Parameters.Add("@idCliente", SqlDbType.NVarChar);
+                    cmd.Parameters["@idCliente"].Value=idCliente;
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        public string GetActividadEconomica(string actividad)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Descripcion
+									FROM Catalogos.ActividadEconomica  
+                                    WHERE CodActividadEconomica = @actividad";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@actividad", actividad);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -862,6 +1055,36 @@ namespace Ws_OLS.Clases
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDouble(data);
+        }
+
+
+        public double GetCantidadTotalPreImpresa(string numero)
+        {
+            string data = "";
+
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT SUM(Unidades)
+                                    FROM Facturacion.FacturaD 
+                                    WHERE idFactura=@numero ";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
                     cmd.Parameters.AddWithValue("@numero", numero);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
@@ -1119,13 +1342,13 @@ namespace Ws_OLS.Clases
         //CAMPO FEL-OBTIENE CODIGO DE GENERACION
         public string GetCodigoGeneracion(int ruta, string idTipo, string fecha, string numero)
         {
-            string data = "";
+            string data = "0";
             //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
             using (SqlConnection cnn = new SqlConnection(connectionString))
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT FELSerie 
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELSerie 
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND TipoDocumento=@idTipo";
 
@@ -1134,6 +1357,98 @@ namespace Ws_OLS.Clases
                     cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@fecha", fecha);
                     cmd.Parameters.AddWithValue("@idTipo", idTipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        public string GetTipoDocPreImpresa(int ruta, string fecha, string numero)
+        {
+            string data = "0";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT TipoFactura
+                                    FROM Facturacion.FacturaE
+                                    WHERE idRutaReparto=@ruta AND CAST(FechaFactura AS DATE)=@fecha and idFactura=@numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //CAMPO FEL-OBTIENE CODIGO DE GENERACION
+        public string GetTipoDoc(int ruta, string fecha, string numero)
+        {
+            string data = "0";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT TipoDocumento
+                                    FROM HandHeld.FacturaEBajada
+                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //CAMPO FEL-OBTIENE CODIGO DE GENERACION
+        public string GetCodigoGeneracionPreImpresa(int ruta, string fecha, string numero)
+        {
+            string data = "0";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELSerie 
+                                    FROM Facturacion.FacturaE
+                                    WHERE idRutaReparto=@ruta AND CAST(FechaFactura AS DATE)=@fecha and idFactura=@numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
                     cmd.Parameters.AddWithValue("@numero", numero);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
@@ -1189,6 +1504,35 @@ namespace Ws_OLS.Clases
             return dt;
         }
 
+        //OBTIENE DETALLE POR FACTURAS
+        public DataTable CantidadDetallePreImpresa(string numero)
+        {
+            DataTable dt = new DataTable();
+
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT idProductos
+                                    FROM Facturacion.FacturaD 
+                                    WHERE idFactura=@numero
+									ORDER BY IdProductos ASC";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataAdapter ds = new SqlDataAdapter(cmd);
+                    ds.Fill(dt);
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+
+            return dt;
+        }
+
         //OBTIENE CANTIDAD DE UNIDADES POR CADA DETALLE
         public double GetCantidadDetalle(int ruta, string numero, string producto)
         {
@@ -1219,6 +1563,37 @@ namespace Ws_OLS.Clases
 
             return Convert.ToDouble(data);
         }
+
+        //OBTIENE CANTIDAD DE UNIDADES POR CADA DETALLE
+        public double GetCantidadDetallePreImpresa(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Unidades 
+                                    FROM Facturacion.FacturaD
+                                    WHERE idFactura=@numero AND idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDouble(data);
+        }
+
 
 
         //OBTIENE NOMBRE DEL PRODUCTO
@@ -1281,6 +1656,37 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
+
+        //OBTIENE PESO DEL PRODUCTO 
+        public double GetPesoProductoDetallePreImpresa(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Peso 
+                                    FROM Facturacion.FacturaD
+                                    WHERE idFactura=@numero AND idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDouble(data);
+        }
+
         //OBTIENE PRECIO UNITARIO DEL DETALLE
         public decimal GetPrecioUnitarioDetalle(int ruta, string numero, string producto)
         {
@@ -1314,6 +1720,39 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE PRECIO UNITARIO DEL DETALLE
+        public decimal GetPrecioUnitarioDetallePreImpresaCCF(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                //string sqlQuery = @"SELECT (PrecioUnitario + DescuentoPorPrecio)
+                string sqlQuery = @"SELECT FORMAT((PrecioSinImpuesto + Descuento),'N4', 'es-GT')
+                                    FROM Facturacion.FacturaD
+                                    WHERE idFactura=@numero AND idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDecimal(data);
+        }
+
+
+
+        //OBTIENE PRECIO UNITARIO DEL DETALLE
         public decimal GetPrecioUnitarioDetalleFAC(int ruta, string numero, string producto)
         {
             string data = "";
@@ -1336,6 +1775,81 @@ namespace Ws_OLS.Clases
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+                //Double dd = Convert.ToDouble(data.Replace(',', '.'), CultureInfo.InvariantCulture);
+            }
+
+            return Convert.ToDecimal(data);
+        }
+
+        //COMPRUEBA UNIDAD DE MEDIDA
+        public string CompruebaUnidadMedida(string producto)
+        {
+            string data = "1";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+
+
+                cnn.Open();
+                //string sqlQuery = @"SELECT ROUND(((PrecioUnitario * 0.13) + preciounitario + DescuentoPorPrecio),2)
+                //                                FROM HandHeld.FacturaDBajada
+                //                                WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
+                string sqlQuery = @"SELECT UnidadFacturacion
+                                  FROM Reparto.VistaProducto
+                                  WHERE IdProductos=@producto";
+
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+                //Double dd = Convert.ToDouble(data.Replace(',', '.'), CultureInfo.InvariantCulture);
+            }
+
+            return data;
+        }
+
+        //OBTIENE PRECIO UNITARIO DEL DETALLE
+        public decimal GetPrecioUnitarioDetalleFACPreImpreso(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+
+
+                cnn.Open();
+                //string sqlQuery = @"SELECT ROUND(((PrecioUnitario * 0.13) + preciounitario + DescuentoPorPrecio),2)
+                //                                FROM HandHeld.FacturaDBajada
+                //                                WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
+                string sqlQuery = @"SELECT FORMAT((CASE WHEN P.UnidadFacturacion= 1 THEN D.Total/ D.Unidades ELSE D.Total/ D.Peso END),'N4', 'es-GT')
+                                  FROM Facturacion.FacturaD D
+                                  INNER JOIN Reparto.VistaProducto P ON P.IdProductos = D.idProductos
+                                  WHERE D.idFactura=@numero AND D.idProductos=@producto";
+
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                   
                     cmd.Parameters.AddWithValue("@numero", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
@@ -1413,6 +1927,35 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
+        public double GetVentasGravadasDetallePreImpresa(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Total 
+                                    FROM Facturacion.FacturaD
+                                    WHERE idFactura=@numero AND idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDouble(data);
+        }
+
         //OBTIENE VENTAS GRAVADAS DETALLE CREDITO FISCAL
         public double GetVentasGravadasDetalleCCF(int ruta, string numero, string producto)
         {
@@ -1429,6 +1972,36 @@ namespace Ws_OLS.Clases
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDouble(data);
+        }
+
+        //OBTIENE VENTAS GRAVADAS DETALLE CREDITO FISCAL
+        public double GetVentasGravadasDetalleCCFPreImpresa(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT (Total-Iva) 
+                                    FROM Facturacion.FacturaD
+                                    WHERE idFactura=@numero AND idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
                     cmd.Parameters.AddWithValue("@numero", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
@@ -1476,6 +2049,36 @@ namespace Ws_OLS.Clases
             return data;
         }
 
+        //OBTIENE DESCUENTO POR PRECIO
+        public string GetDescuentoPrecioDetallePreImpresa(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT Descuento 
+                                    FROM Facturacion.FacturaD
+                                    WHERE idFactura=@numero AND idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
         //CAMPO FEL-OBTIENE IVA DE LA LINEA
         public decimal GetIVALineaFac(int ruta, string fecha, string numero, string producto)
         {
@@ -1493,6 +2096,38 @@ namespace Ws_OLS.Clases
                 {
                     cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+
+
+                cnn.Close();
+            }
+
+            return Convert.ToDecimal(data);
+        }
+
+        //CAMPO FEL-OBTIENE IVA DE LA LINEA
+        public decimal GetIVALineaFacPreImpresa(string numero, string producto)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT ISNULL(Iva, 0) Iva
+                                    FROM Facturacion.FacturaD
+                                    WHERE idFactura=@numero AND idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
                     cmd.Parameters.AddWithValue("@numero", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
