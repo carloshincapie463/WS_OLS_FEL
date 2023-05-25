@@ -90,6 +90,7 @@
   <ItemGroup>
     <Compile Include="Clases\ControlDatosOLS.cs" />
     <Compile Include="Clases\Creditos Fiscales.cs" />
+    <Compile Include="Clases\FacturasSalaVentas.cs" />
     <Compile Include="Clases\Facturas.cs" />
     <Compile Include="Clases\JsonTokenOLS.cs" />
     <Compile Include="Clases\MapaAnulacion.cs" />
@@ -97,6 +98,7 @@
     <Compile Include="Clases\MapaResponse.cs" />
     <Compile Include="Clases\Notas de Credito.cs" />
     <Compile Include="Clases\Notas de Remision.cs" />
+    <Compile Include="Clases\NotasCreditoHH.cs" />
     <Compile Include="Clases\Rutas.cs" />
     <Compile Include="OlsWebService.asmx.cs">
       <DependentUpon>OlsWebService.asmx</DependentUpon>

@@ -1,25 +1,18 @@
 ﻿using Microsoft.Practices.EnterpriseLibrary.Data;
 using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
-using System.Data.Common;
 using System.Data.SqlClient;
-using System.Data.SqlTypes;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Web;
 
 namespace Ws_OLS.Clases
 {
-    public class Facturas
+    public class FacturasSalaVentas
     {
         //METODOS DE LLAMADA
 
         private Database Db;
 
-        string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
+        private string connectionString = ConfigurationManager.ConnectionStrings["IPES_Sala"].ConnectionString;
         //string connectionStringH = ConfigurationManager.ConnectionStrings["IPESH"].ConnectionString;
 
         //public Facturas()
@@ -27,9 +20,8 @@ namespace Ws_OLS.Clases
         //	Db = DatabaseFactory.CreateDatabase();
         //}
 
-
         //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
-        public DataTable CantidadFacturas(int ruta, string FC_tipo, string FC_estado, string fecha, long facNum, int doc)
+        public DataTable CantidadFacturas(int ruta, string fecha, long facNum)
         {
             DataTable dt = new DataTable();
 
@@ -40,61 +32,25 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery;
 
-                if (doc == 7) //7 ANULACIONES
+                if (facNum == -1)
                 {
-                    if (facNum == -1)// ANULACIONES MASIVAS
-                    {
-                        sqlQuery = @"SELECT *
-									  FROM HandHeld.FacturaEBajada
-									  WHERE idRuta=@ruta 
-									  AND CAST(Fecha AS DATE)=@fecha 
-                                      AND TipoDocumento=@FC
-                                      AND estado=@estado
-									  AND FeLAnulacionNumero IS NULL";
-                    }
-                    else          //ANULACIONES INDIVIDUALES
-                    {
-                        sqlQuery = @"SELECT *
-									  FROM HandHeld.FacturaEBajada
-									  WHERE idRuta=@ruta 
-									  AND CAST(Fecha AS DATE)=@fecha 
-                                      AND TipoDocumento=@FC
-                                      AND estado=@estado
-									  AND Numero=@numero";
-                    }
+                    sqlQuery = @"SELECT *
+									  FROM PosIP.FacturaE
+									  WHERE CAST(FechaHora  AS DATE)='@fecha'
+									  --AND Correlativo =586";
                 }
                 else
                 {
-                    if (facNum == -1)
-                    {
-                        sqlQuery = @"SELECT *
-									  FROM HandHeld.FacturaEBajada
-									  WHERE idRuta=@ruta 
-									  AND CAST(Fecha AS DATE)=@fecha 
-                                      AND TipoDocumento=@FC
-                                      AND estado=@estado
-                                      AND FELAutorizacion IS NULL";
-                    }
-                    else
-                    {
-                        sqlQuery = @"SELECT *
-									  FROM HandHeld.FacturaEBajada
-									  WHERE idRuta=@ruta 
-									  AND CAST(Fecha AS DATE)=@fecha 
-                                      AND TipoDocumento=@FC
-                                      AND estado=@estado
-									  AND Numero=@numero
-                                      AND FELAutorizacion IS NULL";
-                    }
+                    sqlQuery = @"SELECT *
+									  FROM PosIP.FacturaE
+									  WHERE CAST(FechaHora  AS DATE)='@fecha'
+									  AND Correlativo =@numero";
                 }
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@fecha", fecha);
-                    cmd.Parameters.AddWithValue("@FC", FC_tipo);
-                    cmd.Parameters.AddWithValue("@estado", FC_estado);
                     if (facNum != -1)
                     {
                         cmd.Parameters.AddWithValue("@numero", facNum);
@@ -102,8 +58,6 @@ namespace Ws_OLS.Clases
                     SqlDataAdapter ds = new SqlDataAdapter(cmd);
                     ds.Fill(dt);
                     //dsSumario.Tables.Add(dt);
-
-
                 }
 
                 cnn.Close();
@@ -130,8 +84,8 @@ namespace Ws_OLS.Clases
                     {
                         sqlQuery = @"SELECT *
 									  FROM HandHeld.FacturaEBajada
-									  WHERE idRuta=@ruta 
-									  AND CAST(Fecha AS DATE)=@fecha 
+									  WHERE idRuta=@ruta
+									  AND CAST(Fecha AS DATE)=@fecha
                                       AND TipoDocumento=@FC
                                       AND estado=@estado
 									  AND FeLAnulacionNumero IS NULL";
@@ -140,8 +94,8 @@ namespace Ws_OLS.Clases
                     {
                         sqlQuery = @"SELECT *
 									  FROM HandHeld.FacturaEBajada
-									  WHERE idRuta=@ruta 
-									  AND CAST(Fecha AS DATE)=@fecha 
+									  WHERE idRuta=@ruta
+									  AND CAST(Fecha AS DATE)=@fecha
                                       AND TipoDocumento=@FC
                                       AND estado=@estado
 									  AND Numero=@numero";
@@ -152,24 +106,23 @@ namespace Ws_OLS.Clases
                     if (facNum == -1)
                     {
                         sqlQuery = @"SELECT *
-									  FROM Facturacion.FacturaE 
-									  WHERE idRutaReparto=@ruta 
-									  AND CAST(FechaFactura AS DATE)=@fecha 
+									  FROM Facturacion.FacturaE
+									  WHERE idRutaReparto=@ruta
+									  AND CAST(FechaFactura AS DATE)=@fecha
                                       AND Estado=0
                                       AND FELAutorizacion IS NULL";
                     }
                     else
                     {
                         sqlQuery = @"SELECT *
-									  FROM Facturacion.FacturaE 
-									  WHERE idRutaReparto=@ruta 
-									  AND CAST(FechaFactura AS DATE)=@fecha 
+									  FROM Facturacion.FacturaE
+									  WHERE idRutaReparto=@ruta
+									  AND CAST(FechaFactura AS DATE)=@fecha
                                       AND Estado=0
 									  AND idFactura=@numero
                                       AND FELAutorizacion IS NULL";
                     }
                 }
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -183,8 +136,6 @@ namespace Ws_OLS.Clases
                     SqlDataAdapter ds = new SqlDataAdapter(cmd);
                     ds.Fill(dt);
                     //dsSumario.Tables.Add(dt);
-
-
                 }
 
                 cnn.Close();
@@ -193,16 +144,16 @@ namespace Ws_OLS.Clases
             return dt;
         }
 
-        //OBTIENE RESOLUCION 
+        //OBTIENE RESOLUCION
         public string GetResolucion(int ruta, string idSerie)
         {
             string resolucion = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT resolucion 
-                                    FROM Facturacion.Series 
-                                    WHERE idSerie=@idSerie AND idRuta=@ruta AND estado ='ACT'";
+                string sqlQuery = @"SELECT resolucion
+                                    FROM Facturacion.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -228,8 +179,8 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT ISNULL((SELECT Token 
-                                    FROM Facturacion.TokenFEL 
+                string sqlQuery = @"SELECT ISNULL((SELECT Token
+                                    FROM Facturacion.TokenFEL
                                     WHERE CAST(Fecha AS DATE) =@Fecha), 0) Token";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -248,16 +199,14 @@ namespace Ws_OLS.Clases
             return resolucion;
         }
 
-
         //INSERTAR TOKEN EN LA BASE DE DATOS
         public void InsertaToken(string TokenI)
         {
-
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
                 //string sqlQuery = @"SELECT idSerie
-                //                                FROM Facturacion.Series 
+                //                                FROM Facturacion.Series
                 //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
                 string sqlQuery = @"INSERT INTO Facturacion.TokenFEL (Fecha,Token) VALUES
 	                                (GETDATE(),@Token)";
@@ -273,8 +222,6 @@ namespace Ws_OLS.Clases
             }
         }
 
-
-
         //OBTIENE RESTINICIO
         public string GetResInicio(int ruta, string idSerie)
         {
@@ -283,9 +230,9 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT numeroDel 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
+                string sqlQuery = @"SELECT numeroDel
+                                    FROM Facturacion.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -312,9 +259,9 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT numeroAl 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
+                string sqlQuery = @"SELECT numeroAl
+                                    FROM Facturacion.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -341,9 +288,9 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT FechaAutorizacion 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
+                string sqlQuery = @"SELECT FechaAutorizacion
+                                    FROM Facturacion.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -371,9 +318,9 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT nit 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND idSerie=@idSerie";
+                string sqlQuery = @"SELECT nit
+                                    FROM Facturacion.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -401,7 +348,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT FechaHora 
+                string sqlQuery = @"SELECT FechaHora
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
@@ -433,7 +380,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT idempleado 
+                string sqlQuery = @"SELECT idempleado
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
@@ -464,7 +411,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT numeroSerie 
+                string sqlQuery = @"SELECT numeroSerie
                                     FROM Facturacion.Series
                                     WHERE idRuta=@ruta AND idSerie=@idSerie";
 
@@ -486,20 +433,24 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE NOMBRE DE ESTABLECIMIENTO
-        public string GetNombreEstablecimiento(string idCliente)
+        public string GetNombreEstablecimiento(int idSucursal)
         {
             string data = "";
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT NombreNegocio
-									FROM SAP.Clientes
-									WHERE IdCliente=@idCliente";
+         //       string sqlQuery = @"SELECT NombreNegocio
+									//FROM SAP.Clientes
+									//WHERE IdCliente=@idCliente";
+
+                string sqlQuery = @"SELECT Descripcion
+									FROM PosIP.Sucursal
+									WHERE IdSucursal=@idSucursal";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    cmd.Parameters.AddWithValue("@idSucursal", idSucursal);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -550,7 +501,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT TipoDocumento 
+                string sqlQuery = @"SELECT TipoDocumento
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
@@ -581,9 +532,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente 
-									FROM Clientes.Documentos CD 
-									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente 
+                string sqlQuery = @"SELECT CD.DocumentoCliente
+									FROM Clientes.Documentos CD
+									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente
 									WHERE CD.IdTiposDocumento =1 AND C.IdCliente =@IdCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -610,9 +561,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente 
-									FROM Clientes.Documentos CD 
-									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente 
+                string sqlQuery = @"SELECT CD.DocumentoCliente
+									FROM Clientes.Documentos CD
+									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente
 									WHERE CD.IdTiposDocumento =2 AND C.IdCliente =@IdCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -639,9 +590,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente 
-									FROM Clientes.Documentos CD 
-									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente 
+                string sqlQuery = @"SELECT CD.DocumentoCliente
+									FROM Clientes.Documentos CD
+									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente
 									WHERE CD.IdTiposDocumento =3 AND C.IdCliente =@IdCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -660,7 +611,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         //OBTIENE CODIGO CLIENTE
         public string GetCodigoCliente(int ruta, string fecha, string numero)
         {
@@ -670,7 +620,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT IdCliente 
+                string sqlQuery = @"SELECT IdCliente
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
@@ -692,7 +642,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         //OBTIENE CODIGO CLIENTE
         public string GetNombreCliente(string idCliente)
         {
@@ -701,7 +650,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT NombreCompleto 
+                string sqlQuery = @"SELECT NombreCompleto
                                     FROM dbo.Clientes
                                     WHERE IdCliente=@idCliente";
 
@@ -721,7 +670,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        //OBTIENE DIRECCION 
+        //OBTIENE DIRECCION
         public string GetDireccion(string idCliente)
         {
             string data = "";
@@ -729,7 +678,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Direccion 
+                string sqlQuery = @"SELECT Direccion
                                     FROM DireccionesClientes
                                     WHERE IdCliente=@idCliente";
 
@@ -749,7 +698,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        //OBTIENE DEPARTAMENTO 
+        //OBTIENE DEPARTAMENTO
         public string GetDepartamento(string idCliente)
         {
             string data = "";
@@ -757,9 +706,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.NombreCompleto 
-									FROM DireccionesClientes DC 
-									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento 
+                string sqlQuery = @"SELECT CD.NombreCompleto
+									FROM DireccionesClientes DC
+									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento
 									WHERE DC.IdCliente =@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -785,9 +734,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.CodigoDepartamento 
-									FROM DireccionesClientes DC 
-									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento 
+                string sqlQuery = @"SELECT CD.CodigoDepartamento
+									FROM DireccionesClientes DC
+									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento
 									WHERE DC.IdCliente =@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -806,8 +755,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
-        //OBTIENE DEPARTAMENTO 
+        //OBTIENE DEPARTAMENTO
         public string GetMunicipio(string idCliente)
         {
             string data = "";
@@ -815,9 +763,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.NombreCompleto 
-									FROM DireccionesClientes DC 
-									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento 
+                string sqlQuery = @"SELECT CD.NombreCompleto
+									FROM DireccionesClientes DC
+									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento
 									WHERE DC.IdCliente =@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -844,8 +792,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT RIGHT(CD.CodigoMunicipio, 2) as CodigoMunicipio
-									FROM DireccionesClientes DC 
-									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento 
+									FROM DireccionesClientes DC
+									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento
 									WHERE DC.IdCliente =@idCliente AND CD.IdMunicipio =DC.IdMunicipio ";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -864,8 +812,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
-        //OBTIENE GIRO NEGOCIO 
+        //OBTIENE GIRO NEGOCIO
         public string GetGiroNegocio(string idCliente)
         {
             string data = "";
@@ -901,13 +848,14 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT ActividadEconomica
-									FROM SAP.PersonaT 
-                                    WHERE CodFuncion = 15 AND RIGHT('0000000000' + LTRIM(RTRIM(STR(CodCliente))), 10) LIKE '%' + @idCliente + '%'";
+									FROM SAP.PersonaT
+                                    WHERE CodFuncion = 15 AND CodCliente=@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     //cmd.Parameters.AddWithValue("@idCliente", idCliente.Trim().ToString());
-                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    cmd.Parameters.Add("@idCliente", SqlDbType.NVarChar);
+                    cmd.Parameters["@idCliente"].Value = idCliente;
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -929,7 +877,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT Descripcion
-									FROM Catalogos.ActividadEconomica  
+									FROM Catalogos.ActividadEconomica
                                     WHERE CodActividadEconomica = @actividad";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -1010,7 +958,6 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
-
         //OBTIENE MONTO EN LETRAS
         public string GetMontoLetras(double monto)
         {
@@ -1037,7 +984,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         public double GetCantidadTotal(int ruta, string numero)
         {
             string data = "";
@@ -1048,7 +994,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT SUM(Unidades)
-                                    FROM HandHeld.FacturaDBajada 
+                                    FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero ";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -1068,7 +1014,6 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
-
         public double GetCantidadTotalPreImpresa(string numero)
         {
             string data = "";
@@ -1079,7 +1024,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT SUM(Unidades)
-                                    FROM Facturacion.FacturaD 
+                                    FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero ";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -1097,7 +1042,6 @@ namespace Ws_OLS.Clases
 
             return Convert.ToDouble(data);
         }
-
 
         //OBTIENE CODIGO DE CLIENTE PRINCIPAL
         public string GetCodigoClientePrincipal(string idCliente)
@@ -1184,7 +1128,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         //OBTIENE RUTA VENTA
         public string GetRutaVenta(string idCliente)
         {
@@ -1196,7 +1139,7 @@ namespace Ws_OLS.Clases
                 //string sqlQuery = @"SELECT idruta
                 //					FROM dbo.RutasClientes
                 //					WHERE idcliente=@idCliente";
-                string sqlQuery = @"SELECT Ruta RutaVenta 
+                string sqlQuery = @"SELECT Ruta RutaVenta
 								   FROM dbo.rutasclientes rc
                                    INNER JOIN dbo.rutas r ON rc.idruta = r.idruta
 							       WHERE idcliente = @idCliente AND rc.idtiporuta = 1";
@@ -1216,7 +1159,6 @@ namespace Ws_OLS.Clases
 
             return data;
         }
-
 
         //OBTIENE RUTA REPARTO
         public string GetRutaReparto(string idRuta)
@@ -1274,7 +1216,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         //OBTIENE SECUENCIA
         public string GetSecuencia(string num)
         {
@@ -1313,8 +1254,8 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT FacturaFelOLS 
-									FROM Pedidos.Rutas 
+                string sqlQuery = @"SELECT FacturaFelOLS
+									FROM Pedidos.Rutas
 									WHERE IdRuta=@ruta AND IdTipoRuta =2";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -1347,7 +1288,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELSerie 
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELSerie
                                     FROM HandHeld.FacturaEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND TipoDocumento=@idTipo";
 
@@ -1440,7 +1381,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELSerie 
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELSerie
                                     FROM Facturacion.FacturaE
                                     WHERE idRutaReparto=@ruta AND CAST(FechaFactura AS DATE)=@fecha and idFactura=@numero";
 
@@ -1462,10 +1403,9 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         /**********************DETALLE***********************/
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="ruta"></param>
         /// <param name="numero"></param>
@@ -1483,7 +1423,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT IdProductos
-                                    FROM HandHeld.FacturaDBajada 
+                                    FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND Numero=@numero
 									ORDER BY IdProductos ASC";
 
@@ -1514,7 +1454,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT idProductos
-                                    FROM Facturacion.FacturaD 
+                                    FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero
 									ORDER BY IdProductos ASC";
 
@@ -1541,7 +1481,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Unidades 
+                string sqlQuery = @"SELECT Unidades
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
@@ -1572,7 +1512,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Unidades 
+                string sqlQuery = @"SELECT Unidades
                                     FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero AND idProductos=@producto";
 
@@ -1593,8 +1533,6 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
-
-
         //OBTIENE NOMBRE DEL PRODUCTO
         public string GetNombreProducto(string producto)
         {
@@ -1603,10 +1541,9 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT NombreCompleto 
-                                    FROM SAP.Productos 
+                string sqlQuery = @"SELECT NombreCompleto
+                                    FROM SAP.Productos
                                     WHERE idProducto = @producto";
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1624,7 +1561,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        //OBTIENE PESO DEL PRODUCTO 
+        //OBTIENE PESO DEL PRODUCTO
         public double GetPesoProductoDetalle(int ruta, string numero, string producto)
         {
             string data = "";
@@ -1633,7 +1570,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Peso 
+                string sqlQuery = @"SELECT Peso
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
@@ -1655,8 +1592,7 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
-
-        //OBTIENE PESO DEL PRODUCTO 
+        //OBTIENE PESO DEL PRODUCTO
         public double GetPesoProductoDetallePreImpresa(string numero, string producto)
         {
             string data = "";
@@ -1665,7 +1601,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Peso 
+                string sqlQuery = @"SELECT Peso
                                     FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero AND idProductos=@producto";
 
@@ -1696,7 +1632,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 //string sqlQuery = @"SELECT (PrecioUnitario + DescuentoPorPrecio)
-                string sqlQuery = @"SELECT FORMAT((PrecioUnitario + DescuentoPorPrecio),'N4', 'es-ES')
+                string sqlQuery = @"SELECT FORMAT((PrecioUnitario + DescuentoPorPrecio),'N4', 'es-GT')
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
@@ -1728,7 +1664,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 //string sqlQuery = @"SELECT (PrecioUnitario + DescuentoPorPrecio)
-                string sqlQuery = @"SELECT FORMAT((PrecioSinImpuesto + Descuento),'N4', 'es-ES')
+                string sqlQuery = @"SELECT FORMAT((PrecioSinImpuesto + Descuento),'N4', 'es-GT')
                                     FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero AND idProductos=@producto";
 
@@ -1749,8 +1685,6 @@ namespace Ws_OLS.Clases
             return Convert.ToDecimal(data);
         }
 
-
-
         //OBTIENE PRECIO UNITARIO DEL DETALLE
         public decimal GetPrecioUnitarioDetalleFAC(int ruta, string numero, string producto)
         {
@@ -1759,17 +1693,14 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-
-
                 cnn.Open();
                 //string sqlQuery = @"SELECT ROUND(((PrecioUnitario * 0.13) + preciounitario + DescuentoPorPrecio),2)
                 //                                FROM HandHeld.FacturaDBajada
                 //                                WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
-                string sqlQuery = @"SELECT FORMAT((CASE WHEN P.UnidadFacturacion= 1 THEN D.Valor/ D.Unidades ELSE D.Valor / D.Peso END),'N4', 'es-ES')
+                string sqlQuery = @"SELECT FORMAT((CASE WHEN P.UnidadFacturacion= 1 THEN D.Valor/ D.Unidades ELSE D.Valor / D.Peso END),'N4', 'es-GT')
                                   FROM HandHeld.FacturaDBajada D
                                   INNER JOIN Reparto.VistaProducto P ON P.IdProductos = D.IdProductos
                                   WHERE D.idRuta=@ruta AND D.Numero=@numero AND D.IdProductos=@producto";
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1798,8 +1729,6 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-
-
                 cnn.Open();
                 //string sqlQuery = @"SELECT ROUND(((PrecioUnitario * 0.13) + preciounitario + DescuentoPorPrecio),2)
                 //                                FROM HandHeld.FacturaDBajada
@@ -1807,7 +1736,6 @@ namespace Ws_OLS.Clases
                 string sqlQuery = @"SELECT UnidadFacturacion
                                   FROM Reparto.VistaProducto
                                   WHERE IdProductos=@producto";
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1834,21 +1762,17 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-
-
                 cnn.Open();
                 //string sqlQuery = @"SELECT ROUND(((PrecioUnitario * 0.13) + preciounitario + DescuentoPorPrecio),2)
                 //                                FROM HandHeld.FacturaDBajada
                 //                                WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
-                string sqlQuery = @"SELECT FORMAT((CASE WHEN P.UnidadFacturacion= 1 THEN D.Total/ D.Unidades ELSE D.Total/ D.Peso END),'N4', 'es-ES')
+                string sqlQuery = @"SELECT FORMAT((CASE WHEN P.UnidadFacturacion= 1 THEN D.Total/ D.Unidades ELSE D.Total/ D.Peso END),'N4', 'es-GT')
                                   FROM Facturacion.FacturaD D
                                   INNER JOIN Reparto.VistaProducto P ON P.IdProductos = D.idProductos
                                   WHERE D.idFactura=@numero AND D.idProductos=@producto";
 
-
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                   
                     cmd.Parameters.AddWithValue("@numero", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
@@ -1872,10 +1796,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT PLU 
-                                    FROM Pedidos.ProductosCodigosPLU 
+                string sqlQuery = @"SELECT PLU
+                                    FROM Pedidos.ProductosCodigosPLU
                                     WHERE IdProductos = @prod AND IdCliente=@cliente";
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1894,7 +1817,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         //OBTIENE VENTAS GRAVADAS DETALLE
         public double GetVentasGravadasDetalle(int ruta, string numero, string producto)
         {
@@ -1904,7 +1826,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Valor 
+                string sqlQuery = @"SELECT Valor
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
@@ -1934,7 +1856,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Total 
+                string sqlQuery = @"SELECT Total
                                     FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero AND idProductos=@producto";
 
@@ -1964,7 +1886,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT (Valor-Iva) 
+                string sqlQuery = @"SELECT (Valor-Iva)
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
 
@@ -1995,7 +1917,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT (Total-Iva) 
+                string sqlQuery = @"SELECT (Total-Iva)
                                     FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero AND idProductos=@producto";
 
@@ -2025,7 +1947,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT DescuentoPorPrecio 
+                string sqlQuery = @"SELECT DescuentoPorPrecio
                                     FROM HandHeld.FacturaDBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND IdProductos=@producto";
 
@@ -2057,7 +1979,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Descuento 
+                string sqlQuery = @"SELECT Descuento
                                     FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero AND idProductos=@producto";
 
@@ -2104,8 +2026,6 @@ namespace Ws_OLS.Clases
                     }
                 }
 
-
-
                 cnn.Close();
             }
 
@@ -2136,8 +2056,6 @@ namespace Ws_OLS.Clases
                     }
                 }
 
-
-
                 cnn.Close();
             }
 
@@ -2153,8 +2071,8 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT UnidadFacturacion 
-									FROM HandHeld.VistaProducto 
+                string sqlQuery = @"SELECT UnidadFacturacion
+									FROM HandHeld.VistaProducto
 									WHERE IdProductos =@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -2167,14 +2085,11 @@ namespace Ws_OLS.Clases
                     }
                 }
 
-
-
                 cnn.Close();
             }
 
             return Convert.ToInt32(data);
         }
-
 
         //public string resolucion(int rr, int idSe)
         //{
@@ -2188,7 +2103,6 @@ namespace Ws_OLS.Clases
         //		return Db.GetParameterValue(Cm, "ruta");
 
         //	}
-
 
         //}
     }

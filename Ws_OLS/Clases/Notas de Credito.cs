@@ -13,7 +13,7 @@ namespace Ws_OLS.Clases
         string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
 
         //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
-        public DataTable CantidadNotasCredito(int ruta, string fecha)
+        public DataTable CantidadNotasCredito(int ruta, string fecha, string facnum)
         {
             DataTable dt = new DataTable();
 
@@ -27,28 +27,33 @@ namespace Ws_OLS.Clases
                 //					WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha";
 
                 string sqlQuery;
-                sqlQuery = @"SELECT *
+                //sqlQuery = @"SELECT *
+                //                FROM SAP.Liquidacion 
+                //                WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
+                //                AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZFE_CLAVE IS NULL";
+                if (facnum == "-1")
+                {
+                    sqlQuery = @"SELECT *
                                 FROM SAP.Liquidacion 
                                 WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
                                 AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZFE_CLAVE IS NULL";
-                //       if (facNum == -1)
-                //       {
-                //           sqlQuery = @"SELECT *
-                //                       FROM SAP.Liquidacion 
-                //                       WHERE ZOPERAC IN ('01', '04', '05')
-                //                       AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZFE_CLAVE IS NULL";
-                //       }
-                //       else
-                //       {
-                //           sqlQuery = sqlQuery = @"SELECT *
-                //FROM Reparto.DocumentosFacturasEBajada 
-                //WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND Numero=@numero AND FELAutorizacion IS NULL";
-                //       }
+                }
+                else
+                {
+                    sqlQuery = @"SELECT *
+                                FROM SAP.Liquidacion 
+                                WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
+                                AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZNROCF=@factnum AND ZFE_CLAVE IS NULL";
+                }
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@fecha", fecha);
+                    if (facnum != "-1")
+                    {
+                        cmd.Parameters.AddWithValue("@factnum", facnum);
+                    }
                    
                     SqlDataAdapter ds = new SqlDataAdapter(cmd);
                     ds.Fill(dt);
@@ -61,7 +66,7 @@ namespace Ws_OLS.Clases
             return dt;
         }
 
-        public string GetResolucionNC(int ruta, string ope)
+        public string GetResolucionNC(string factura)
         {
             string resolucion = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -69,25 +74,17 @@ namespace Ws_OLS.Clases
 
                 string sqlQuery = "";
                 cnn.Open();
-                if (ope == "01" || ope=="04" || ope=="74")
-                {
-                    sqlQuery = @"SELECT S.resolucion 
-                                    FROM Facturacion.Series S
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Serie=S.numeroSerie
-                                    WHERE E.idFactura=@factura AND estado ='ACT'";
-                }
-                else
-                {
-                    sqlQuery = @"SELECT S.resolucion 
-                                    FROM Facturacion.Series S
-                                    INNER JOIN Liquidaciones.MermasextraE E ON E.Serie=S.numeroSerie
-                                    WHERE E.idFactura=@factura AND estado ='ACT'";
-                }
+
+                    sqlQuery = @"SELECT resolucion 
+                                    FROM Facturacion.Series
+                                    WHERE numeroSerie=@factura AND estado ='ACT'";
+
+                
                 
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@factura", factura);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -102,7 +99,7 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE RESTINICIO
-        public string GetResInicioNC(int ruta)
+        public string GetResInicioNC(string factura)
         {
             string resInicio = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -111,11 +108,11 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT numeroDel 
                                     FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND WHERE idTipoSerie=2 AND estado ='ACT'";
+                                    WHERE numeroSerie=@factura AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@factura", factura);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -130,20 +127,20 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE RESTFIN
-        public string GetResFinNC(int ruta)
+        public string GetResFinNC(string factura)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT numeroAl 
-                                    FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta AND WHERE idTipoSerie=2 AND estado ='ACT'";
+                string sqlQuery = @"SELECT numeroAl
+                                    FROM Facturacion.Series
+                                    WHERE numeroSerie=@factura AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@factura", factura);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -158,20 +155,20 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE RESTFIN
-        public string GetRestFechaNC(int ruta)
+        public string GetRestFechaNC(string factura)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT FechaAutorizacion 
+                string sqlQuery = @"SELECT FechaAutorizacion
                                     FROM Facturacion.Series 
-                                    WHERE idRuta=@ruta  AND WHERE idTipoSerie=2 AND estado ='ACT'";
+                                    WHERE numeroSerie=@factura AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@factura", factura);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -186,20 +183,20 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE NUMERO SERIES
-        public string GetNumSerieNC(int ruta)
+        public string GetNumSerieNC(string factura)
         {
             string data = "";
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT numeroSerie 
-                                    FROM Facturacion.Series S
-                                    WHERE idRuta=@ruta  AND WHERE idTipoSerie=2 AND estado ='ACT'";
+                string sqlQuery = @"SELECT Serie
+                                    FROM Liquidaciones.NotasEncabezado 
+                                    WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)='@factura'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@factura", factura);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -213,7 +210,35 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        public string GetCorrelativoInterno(string idFactura, string ope)
+        //OBTIENE NOMBRE DEL USUARIO
+        public string GetNombreUsuario(string id)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT nombreEmpleado
+									FROM EmpleadosHH
+									WHERE CodigoAs=@id";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@id", id);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        public string GetCorrelativoInterno(string idFactura)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -221,20 +246,11 @@ namespace Ws_OLS.Clases
             {
                 string sqlQuery = "";
                 cnn.Open();
-                if (ope == "01" || ope == "04" || ope=="24" || ope == "74")
-                {
+
                     sqlQuery = @"SELECT NumeroFormulario 
                                  FROM Liquidaciones.NotasEncabezado 
-                                 WHERE idFactura IN (@idFactura)'";
-                }
-                else
-                {
-                    sqlQuery = @"SELECT NumeroFormulario 
-                                 FROM Liquidaciones.mermasextrae 
-                                 WHERE idFactura IN (@idFactura)'";
-                }
-                  
-
+                                 WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
+                
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@idFactura", idFactura);
@@ -251,7 +267,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        public string GetClienteNC(string idFactura, string ope)
+        public string GetClienteNC(string idFactura)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -259,19 +275,13 @@ namespace Ws_OLS.Clases
             {
                 string sqlQuery = "";
                 cnn.Open();
-                if (ope == "01" || ope == "04" || ope=="24" || ope == "74")
-                {
+
                     sqlQuery = @"SELECT idCliente 
                                     FROM Liquidaciones.NotasEncabezado 
-                                    WHERE idFactura IN (@idFactura)'";
+                                    WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
 
-                }
-                else
-                {
-                    sqlQuery = @"SELECT idCliente 
-                                    FROM Liquidaciones.mermasextrae 
-                                    WHERE idFactura IN (@idFactura)'";
-                }
+
+
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -289,7 +299,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        public string GetTotalNc(string idFactura, string ope)
+        public string GetTotalNc(string idFactura)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -297,21 +307,12 @@ namespace Ws_OLS.Clases
             {
                 string sqlQuery = "";
                 cnn.Open();
-                if (ope == "01" || ope == "04" || ope=="24" || ope == "74")
-                {
                     sqlQuery = @"
                                     SELECT Total 
                                     FROM Liquidaciones.NotasEncabezado 
-                                    WHERE idFactura IN (@idFactura)'";
-                }
-                else
-                {
-                    sqlQuery = @"
-                                    SELECT Total 
-                                    FROM Liquidaciones.mermasextrae 
-                                    WHERE idFactura IN (@idFactura)'";
-                }
-                    
+                                    WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
+
+
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -329,7 +330,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        public string GetSubTotalNc(string idFactura, string ope)
+        public string GetSubTotalNc(string idFactura)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -337,20 +338,12 @@ namespace Ws_OLS.Clases
             {
                 string sqlQuery = "";
                 cnn.Open();
-                if (ope == "01" || ope == "04" || ope=="24" || ope == "74")
-                {
+
                     sqlQuery = @"
                                     SELECT SubTotal 
                                     FROM Liquidaciones.NotasEncabezado 
-                                    WHERE idFactura IN (@idFactura)'";
-                }
-                else
-                {
-                    sqlQuery = @"
-                                    SELECT SubTotal 
-                                    FROM Liquidaciones.mermasextrae 
-                                    WHERE idFactura IN (@idFactura)'";
-                }
+                                    WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
+
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -378,7 +371,7 @@ namespace Ws_OLS.Clases
                 string sqlQuery = @"
                                     SELECT IVA 
                                     FROM Liquidaciones.NotasEncabezado 
-                                    WHERE idFactura IN (@idFactura)'";
+                                    WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -396,6 +389,36 @@ namespace Ws_OLS.Clases
             return data;
         }
 
+        public decimal GetIVALineaNc(string numero, string producto)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"
+                                    SELECT D.IVA
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idFactura", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDecimal(data);
+        }
+
         public string GetPercepcionNc(string idFactura)
         {
             string data = "";
@@ -406,7 +429,7 @@ namespace Ws_OLS.Clases
                 string sqlQuery = @"
                                     SELECT Percepcion 
                                     FROM Liquidaciones.NotasEncabezado 
-                                    WHERE idFactura IN (@idFactura)'";
+                                    WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -431,10 +454,13 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"
-                                    SELECT Factura 
-                                    FROM Liquidaciones.FacturasE 
-                                    WHERE idFactura IN (@idFactura)'";
+                string sqlQuery = @"SELECT FF.FELSerie 
+                                    FROM Facturacion.FacturaE FF 
+                                    INNER JOIN Liquidaciones.FacturasE LE ON CONVERT(BIGINT,FF.FACTURA)=CONVERT(BIGINT,LE.FACTURA) 
+                                    INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura 
+                                    AND FF.idCliente=LE.idCliente
+                                    AND LE.idRutaReparto=FF.idRutaReparto
+                                    AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -584,9 +610,10 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT SUM(Unidades)
-                                    FROM Liquidaciones.NotasEncabezado  
-                                    WHERE idFactura IN (@idFactura)'";
+                string sqlQuery = @"SELECT SUM(D.Unidades)
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -654,8 +681,8 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT MATNR
                                     FROM SAP.Liquidacion 
-                                    WHERE ZOPERAC IN ('01', '04', '05')
-                                    AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZFE_CLAVE IS NULL ";
+                                    WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
+                                    AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZNROCF=@numero AND ZFE_CLAVE IS NULL ";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -675,20 +702,21 @@ namespace Ws_OLS.Clases
 
 
         //OBTIENE CANTIDAD DE UNIDADES POR CADA DETALLE
-        public double GetCantidadDetalle(int ruta, string numero, string producto)
+        public double GetCantidadDetalle(string numero, string producto)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Unidades 
-                                    FROM Reparto.DocumentosFacturasDBajada 
-                                    WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
+                string sqlQuery = @"SELECT D.Unidades
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
-                    cmd.Parameters.AddWithValue("@numero", numero);
+
+                    cmd.Parameters.AddWithValue("@idFactura", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
@@ -734,20 +762,20 @@ namespace Ws_OLS.Clases
 
 
         //OBTIENE PESO DEL PRODUCTO 
-        public double GetPesoProductoDetalle(int ruta, string numero, string producto)
+        public double GetPesoProductoDetalle(string numero, string producto)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Peso 
-                                    FROM Reparto.DocumentosFacturasDBajada
-                                    WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
+                string sqlQuery = @"SELECT D.Peso
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
-                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@idFactura", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
@@ -764,20 +792,20 @@ namespace Ws_OLS.Clases
 
 
         //OBTIENE PRECIO UNITARIO DEL DETALLE
-        public decimal GetPrecioUnitarioDetalle(int ruta, string numero, string producto)
+        public decimal GetPrecioUnitarioDetalle(string numero, string producto)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Precio 
-                                    FROM Reparto.DocumentosFacturasDBajada 
-                                    WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
+                string sqlQuery = @"SELECT D.Precio
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
-                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@idFactura", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
@@ -793,20 +821,21 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE VENTAS GRAVADAS DETALLE
-        public double GetVentasGravadasDetalle(int ruta, string numero, string producto)
+        public double GetVentasGravadasDetalle(string numero, string producto)
         {
             string data = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT SubTotal 
-                                    FROM Reparto.DocumentosFacturasDBajada
-                                    WHERE idRuta=@ruta AND Numero=@numero AND IdProductos=@producto";
+                string sqlQuery = @"SELECT D.SubTotal
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-                {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
-                    cmd.Parameters.AddWithValue("@numero", numero);
+                { 
+                
+                    cmd.Parameters.AddWithValue("@idFactura", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
@@ -822,7 +851,7 @@ namespace Ws_OLS.Clases
         }
 
         //CAMPO FEL-OBTIENE IVA DE LA LINEA
-        public decimal GetIVALineaFac(int ruta, string fecha, string numero, string producto)
+        public decimal GetIVALineaFac(string numero, string producto)
         {
             string data = "";
             //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
@@ -830,15 +859,15 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT ISNULL(Iva, 0) Iva
-                                    FROM Reparto.DocumentosFacturasDBajada
-                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND IdProductos=@producto";
+                string sqlQuery = @"SELECT ISNULL(IVA, 0) IVA
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
+                                   
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
-                    cmd.Parameters.AddWithValue("@fecha", fecha);
-                    cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@idFactura", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
