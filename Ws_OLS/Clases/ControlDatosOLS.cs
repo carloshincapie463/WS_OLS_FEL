@@ -199,5 +199,171 @@ namespace Ws_OLS.Clases
                 cnn.Close();
             }
         }
-    }
+
+        /***************************************/
+        /***************ANULACIONES*************/
+        /***************************************/
+        public void ActualizaHH_Anulacion(string descripcion, string Numero, string serie, int ruta, string idNumero)
+        {
+
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                DateTime fechaActual = new DateTime();
+                fechaActual = DateTime.Now;
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series 
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"UPDATE HandHeld.FacturaEBajada SET estado ='ANU',FELDescripcion=@Fel_Descripcion, 
+                                    FelAnulacionNumero=@FelAnulacionNumero,FELAnulacionSerie=@FEL_AnulacionSerie,StatusEntregado ='N',StatusImpresion ='A'
+                                    WHERE  idruta=@idruta AND numero=@numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@Fel_Descripcion", descripcion);
+                    cmd.Parameters.AddWithValue("@FelAnulacionNumero", Numero);
+                    cmd.Parameters.AddWithValue("@FEL_AnulacionSerie", serie);
+                    cmd.Parameters.AddWithValue("@idruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", idNumero);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
+        public void BorraReparto_Anulacion(int ruta, string idNumero)
+        {
+
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                DateTime fechaActual = new DateTime();
+                fechaActual = DateTime.Now;
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series 
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"DELETE FROM Reparto.DevolucionPedidoBajada 
+                                    WHERE idruta=@idruta 
+                                    AND idfactura IN (SELECT idpedidoifx FROM HandHeld.FacturaEBajada WHERE idruta=@idruta AND numero=@numero)";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", idNumero);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
+        public void BorraDevolucion_Anulacion(int ruta, string idNumero)
+        {
+
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                DateTime fechaActual = new DateTime();
+                fechaActual = DateTime.Now;
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series 
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"DELETE FROM HandHeld.DevolucionPedido 
+                                    WHERE idruta=@idruta  
+                                    AND idPedidoIfx IN (SELECT idpedidoifx FROM HandHeld.FacturaEBajada WHERE idruta=@idruta AND numero=@numero)";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", idNumero);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
+        public void InsertaAnulacion_Anulacion(int ruta, string idNumero, string motivo)
+        {
+
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                DateTime fechaActual = new DateTime();
+                fechaActual = DateTime.Now;
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series 
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"INSERT INTO  [reparto].[FacturasAnuladasBajada] ([IdRuta],[SubRuta],[numero],[fechaHoraAnulacion],[motivo],[fecha])  
+                                    VALUES(@idruta,'A',@numero,GETDATE(),@motivo,CONVERT(DATE,GETDATE()))";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", idNumero);
+                    cmd.Parameters.AddWithValue("@motivo", motivo);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
+        public void BorraPagos_Anulacion(int ruta, string idNumero)
+        {
+
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                DateTime fechaActual = new DateTime();
+                fechaActual = DateTime.Now;
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series 
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"DELETE FROM reparto.PagosBajadaGPRS WHERE IdRuta = @idruta AND Factura = @numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idruta", ruta);
+                    cmd.Parameters.AddWithValue("@numero", idNumero);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
+        //NTC SGR
+        public void ActualizaEstadoNotaCredito(string numero, string generacion, string sello, string factura)
+        {
+                using (SqlConnection cnn = new SqlConnection(connectionString))
+                {
+                    cnn.Open();
+                    //string sqlQuery = @"SELECT idSerie
+                    //                                FROM Facturacion.Series 
+                    //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                    string sqlQuery = @"UPDATE SAP.Liquidacion 
+                                        SET ZFE_NUMERO =@numero, ZFE_CLAVE =@sello, ZZBKTXT = @generacion
+                                        WHERE ZNROCF=@numeroID";
+
+                    using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                    {
+                        cmd.Parameters.AddWithValue("@numero", numero);
+                        cmd.Parameters.AddWithValue("@sello", sello);
+                        cmd.Parameters.AddWithValue("@generacion", generacion);
+                        cmd.Parameters.AddWithValue("@numeroID", factura);
+                        cmd.ExecuteNonQuery();
+                        //dsSumario.Tables.Add(dt);
+                    }
+
+                    cnn.Close();
+                }
+            }
+        }
 }
