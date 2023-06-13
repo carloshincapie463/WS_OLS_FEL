@@ -14,6 +14,7 @@ namespace Ws_OLS.Clases
         public string numeroDocumento { get; set; }
         public MapaResponse respuestaOlShttp { get; set; }
         public bool ResultadoSatisfactorio { get; set; }
+        public bool esContigencia { get; set; }
         public string mensajeCompleto { get; set; }
     }
 

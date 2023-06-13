@@ -24,7 +24,9 @@ namespace Ws_OLS.Clases
         public string selloRecibido { get; set; }
         public string fhProcesamiento { get; set; }
         public string numControl { get; set; }
+        public string idMzhProcesamiento { get; set; }
         public string JSONResultante { get; set; }
+
     }
 
     public class MapaResponseAnulacion

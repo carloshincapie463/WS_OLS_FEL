@@ -96,6 +96,7 @@
     <Compile Include="Clases\MapaAnulacion.cs" />
     <Compile Include="Clases\MapaOLS.cs" />
     <Compile Include="Clases\MapaResponse.cs" />
+    <Compile Include="Clases\MapaResponseLinea.cs" />
     <Compile Include="Clases\Notas de Credito.cs" />
     <Compile Include="Clases\Notas de Remision.cs" />
     <Compile Include="Clases\NotasCreditoHH.cs" />

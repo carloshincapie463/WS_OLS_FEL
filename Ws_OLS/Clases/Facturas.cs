@@ -456,6 +456,38 @@ namespace Ws_OLS.Clases
             return data;
         }
 
+        //OBTIENE SERIE
+        public int GetIdSerie(int ruta, string tipo, string fecha, string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT idSerie 
+                                    FROM HandHeld.FacturaEBajada
+                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero and TipoDocumento=@Tipo";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@Tipo", tipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToInt32(data);
+        }
+
         //OBTIENE NUMERO SERIES
         public string GetNumSerie(int ruta, string idSerie)
         {
@@ -1526,6 +1558,37 @@ namespace Ws_OLS.Clases
             return data;
         }
 
+        //CAMPO FEL-OBTIENE NUMERO DE CONTROL
+        public string GetNumControlPreImpresa(int ruta, string fecha, string numero)
+        {
+            string data = "0";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELNumero 
+                                    FROM Facturacion.FacturaE
+                                    WHERE idRutaReparto=@ruta AND CAST(FechaFactura AS DATE)=@fecha and idFactura=@numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
         //CAMPO FEL-OBTIENE CODIGO DE SELLO
         public string GetCodigoSelloPreImpres(int ruta, string fecha, string numero)
         {
@@ -1568,7 +1631,7 @@ namespace Ws_OLS.Clases
         /// <returns></returns>
 
         //OBTIENE DETALLE POR FACTURAS
-        public DataTable CantidadDetalle(int ruta, string numero, string fecha)
+        public DataTable CantidadDetalle(int ruta, string numero, string fecha, int idSerie)
         {
             DataTable dt = new DataTable();
 
@@ -1580,7 +1643,7 @@ namespace Ws_OLS.Clases
                 //string sqlQuery = @"SELECT IdProductos
                 string sqlQuery = @"SELECT *
                                     FROM HandHeld.FacturaDBajada 
-                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND Numero=@numero
+                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND Numero=@numero AND IdSerie=@serie
 									ORDER BY IdProductos ASC";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -1588,6 +1651,7 @@ namespace Ws_OLS.Clases
                     cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@fecha", fecha);
                     cmd.Parameters.AddWithValue("@numero", numero);
+                    cmd.Parameters.AddWithValue("@serie", idSerie);
                     SqlDataAdapter ds = new SqlDataAdapter(cmd);
                     ds.Fill(dt);
                     //dsSumario.Tables.Add(dt);
