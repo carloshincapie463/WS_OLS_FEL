@@ -1258,13 +1258,69 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CodigoRuta
+                string sqlQuery = @"SELECT Ruta
 									FROM dbo.Rutas
 									WHERE IdRuta=@idRuta AND IdTipoRuta=2";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@idRuta", idRuta);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE TELEFONO
+        public string GetTelefono(string cliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT TelMovil
+                                    FROM SAP.Clientes
+                                    WHERE IdCliente =@Cliente";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@cliente", cliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE CORREO
+        public string GetCorreo(string cliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CorreoElectronico
+                                    FROM SAP.Clientes
+                                    WHERE IdCliente =@Cliente";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@cliente", cliente);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {

@@ -19,10 +19,19 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 //string sqlQuery = @"SELECT idSerie
                 //                                FROM Facturacion.Series
-                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                //
+                //      WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string selloTemp = "";
+
+                if (!String.IsNullOrWhiteSpace(sello) && sello != "0")
+                {
+                    selloTemp = "FELAutorizacion = @sello,";
+                }
+
+
                 string sqlQuery = @"UPDATE HandHeld.FacturaEBajada
-									SET FELAutorizacion=@sello, FELSerie=@generacion, FELNumero=@control, FELDescripcion=CONCAT(FELDescripcion, ' FELOLS ')
-									WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND TipoDocumento=@FC AND Numero=@numero";
+									SET "+ selloTemp +" FELSerie=@generacion, FELNumero=@control "+
+									"WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND TipoDocumento=@FC AND Numero=@numero";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -30,14 +39,11 @@ namespace Ws_OLS.Clases
                     cmd.Parameters.AddWithValue("@fecha", fecha);
                     cmd.Parameters.AddWithValue("@FC", FC);
                     cmd.Parameters.AddWithValue("@numero", numero);
-                    if (String.IsNullOrWhiteSpace(sello) || sello=="0")
-                    {
-                        cmd.Parameters.AddWithValue("@sello", null);
-                    }
-                    else
+                    if (!String.IsNullOrWhiteSpace(sello) && sello!="0")
                     {
                         cmd.Parameters.AddWithValue("@sello", sello);
                     }
+                    
 
                     cmd.Parameters.AddWithValue("@generacion", generacion);
                     cmd.Parameters.AddWithValue("@control", control);

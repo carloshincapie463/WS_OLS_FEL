@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -12,11 +11,8 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Runtime.Remoting.Contexts;
 using System.Text;
 using System.Web.Services;
-using System.Web.Services.Description;
-using System.Web.UI.WebControls;
 using Ws_OLS.Clases;
 
 namespace Ws_OLS
@@ -49,6 +45,7 @@ namespace Ws_OLS
         //VALORES DEL CONFIG
         //URL
         private readonly string UrlToken = ConfigurationManager.AppSettings["Token"];
+
         private readonly string UrlJson = ConfigurationManager.AppSettings["EnvioJSON"];
         private readonly string UrlJsonAnulacion = ConfigurationManager.AppSettings["EnvioJSONAnulacion"];
         private readonly string UrlRevisaLinea = ConfigurationManager.AppSettings["RevisaLinea"];
@@ -105,7 +102,7 @@ namespace Ws_OLS
                         anulacion = 0;
                     }
 
-                    respuestaInternaGlobal = respuestaInternaGlobal + EnviaFacturas(ruta, fecha, Documentos[i], -1);
+                    respuestaInternaGlobal = respuestaInternaGlobal + EnviaFacturas(ruta, fecha, Documentos[i], -1, true);
                 }
                 else if (Documentos[i] == 2)
                 {
@@ -120,14 +117,14 @@ namespace Ws_OLS
             return respuestaInternaGlobal;
         }
 
-       /// <summary>
-       /// 
-       /// </summary>
-       /// <param name="ruta"></param>
-       /// <param name="fecha"></param>
-       /// <param name="docPos"></param>
-       /// <param name="numFac"></param>
-       /// <returns></returns>
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="ruta"></param>
+        /// <param name="fecha"></param>
+        /// <param name="docPos"></param>
+        /// <param name="numFac"></param>
+        /// <returns></returns>
         [WebMethod(Description = "Revisa si el servicio esta en linea")]
         public MapaResponseLinea.RespuestaLinea RevisaServicioOLS()
         {
@@ -168,8 +165,6 @@ namespace Ws_OLS
             HttpStatusCode httpStatusCode = respond.StatusCode;
             int numericStatusCode = (int)httpStatusCode;
 
-
-
             if (numericStatusCode == 200) //REVISA SU CODIGO DE ESTADO, SI ES 200 NO HAY ERROR EN EL JSON
             {
                 //JObject jsonObjectX = JObject.Parse(content);
@@ -182,9 +177,6 @@ namespace Ws_OLS
                 string jsonTotal = @"[" + docs + "]";
                 List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
             }
-
-
-
 
             //    string docs = resultObject.ToString();
             //    string jsonTotal = @"[" + docs + "]";
@@ -201,9 +193,6 @@ namespace Ws_OLS
             //        controlOLS.BorraDevolucion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0]);
             //        controlOLS.InsertaAnulacion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], fac_ruta[2]);
             //        controlOLS.BorraPagos_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0]);
-
-
-
 
             //        //string resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
             //        //string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
@@ -267,8 +256,6 @@ namespace Ws_OLS
             //        //string resultJson = jsonRespuesta2.result;
             //        //dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
 
-
-
             //        //string docs = resultObject.ToString();
             //        //string jsonTotal = @"[" + docs + "]";
             //        //List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
@@ -327,8 +314,6 @@ namespace Ws_OLS
             //    string resultJson = jsonRespuesta2.result;
             //    dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
 
-
-
             //    string docs = resultObject.ToString();
             //    string jsonTotal = @"[" + docs + "]";
             //    List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
@@ -355,9 +340,7 @@ namespace Ws_OLS
             //    respuestaOLS1.numeroDocumento = fac_ruta[0];
             //    respuestaOLS1.respuestaOlShttp = null;
 
-
             return respuesta;
-
         }
 
         [WebMethod(Description = "Revisa si datos estan en OLS/Hacienda")]
@@ -414,12 +397,10 @@ namespace Ws_OLS
 
             List<MapaResponseLinea.RespuestaConsulta> jsonDocs;
 
-
-
             if (numericStatusCode == 200) //REVISA SU CODIGO DE ESTADO, SI ES 200 NO HAY ERROR EN EL JSON
             {
                 //JObject jsonObjectX = JObject.Parse(content);
-                
+
                 dynamic jsonRespuesta = JsonConvert.DeserializeObject(content);
                 //string jsontt = jsonRespuesta.result;
                 ////dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
@@ -429,17 +410,13 @@ namespace Ws_OLS
                 string jsonTotal = @"[" + jsonRespuesta + "]";
                 jsonTotal = jsonTotal.Replace("nulo", "");
                 jsonDocs = JsonConvert.DeserializeObject<List<MapaResponseLinea.RespuestaConsulta>>(jsonTotal);
-
             }
             else
             {
                 jsonDocs = null;
             }
 
-
             return jsonDocs;
-
-
         }
 
         /// <summary>
@@ -449,7 +426,7 @@ namespace Ws_OLS
         /// <param name="fecha"></param>
         /// <returns></returns>
         [WebMethod(Description = "Envia solo Facturas/Creditos Fiscales/Anulaciones")]
-        public RespuestaOLS EnviaFacturas(int ruta, string fecha, int docPos, long numFac)
+        public RespuestaOLS EnviaFacturas(int ruta, string fecha, int docPos, long numFac, bool reenvioOLS)
         {
             string Token = "";
             string revisaT = RevisarToken();
@@ -475,7 +452,6 @@ namespace Ws_OLS
                 FC_tipo = "C";
                 FC_estado = "FAC";
             }
-
 
             List<MapaResponseLinea.RespuestaConsulta> respuestaCons = new List<MapaResponseLinea.RespuestaConsulta>();
             //*****FACTURAS O COMPROBATES DE CREDITO FISCAL******/
@@ -505,16 +481,14 @@ namespace Ws_OLS
             //REVISA DATOS SI EXISTE FACTURA O NO
             foreach (DataRow row in FacturasTabla.Rows)
             {
-               correlativoConsulta = "AV_" + row["idSerie"].ToString().Trim() + "_" + row["Numero"].ToString().Trim();
-               idSerieCon = Convert.ToInt32(row["idSerie"].ToString().Trim());
-               idRutaCons = Convert.ToInt32(row["IdRuta"].ToString().Trim());
-               tipoDocCon = row["TipoDocumento"].ToString().Trim() == "F" ? "fac" : "ccf";
-               DateTime fechaHora = DateTime.Parse(row["Fecha"].ToString());
-               fechaCon = fechaHora.ToString("yyyy-MM-dd");
-               numeroCon = row["Numero"].ToString().Trim();
-               respuestaCons = RevisaInformacionDocumento(tipoDocCon, correlativoConsulta);
-
-                
+                correlativoConsulta = "AV_" + row["idSerie"].ToString().Trim() + "_" + row["Numero"].ToString().Trim();
+                idSerieCon = Convert.ToInt32(row["idSerie"].ToString().Trim());
+                idRutaCons = Convert.ToInt32(row["IdRuta"].ToString().Trim());
+                tipoDocCon = row["TipoDocumento"].ToString().Trim() == "F" ? "fac" : "ccf";
+                DateTime fechaHora = DateTime.Parse(row["Fecha"].ToString());
+                fechaCon = fechaHora.ToString("yyyy-MM-dd");
+                numeroCon = row["Numero"].ToString().Trim();
+                respuestaCons = RevisaInformacionDocumento(tipoDocCon, correlativoConsulta);
             }
 
             if (respuestaCons == null)
@@ -523,12 +497,22 @@ namespace Ws_OLS
                 respuestaOLS.respuestaOlShttp = null;
                 respuestaOLS.numeroDocumento = correlativoConsulta;
                 respuestaOLS.ResultadoSatisfactorio = false;
-
+                respuestaOLS.esContigencia = true;
                 return respuestaOLS;
             }
-            else 
+
+            if (respuestaCons[0].doctypes[0].mh == "0")
             {
-                if (respuestaCons[0].doctypes[0].statusmh!="0")
+                respuestaOLS.mensajeCompleto = "Hacienda caida";
+                respuestaOLS.respuestaOlShttp = null;
+                respuestaOLS.numeroDocumento = correlativoConsulta;
+                respuestaOLS.ResultadoSatisfactorio = false;
+                respuestaOLS.esContigencia = true;
+                return respuestaOLS;
+            }
+            else
+            {
+                if (respuestaCons[0].doctypes[0].statusmh == "3" || respuestaCons[0].doctypes[0].statusmh == "4" || respuestaCons[0].doctypes[0].statusmh == "5") // 3-OK  4-INVALIDADO CORRECTO
                 {
                     respuestaCons[0].doctypes[0].sello = respuestaCons[0].doctypes[0].sello.Replace("nulo", "");
                     respuestaCons[0].doctypes[0].codigodegeneracion = respuestaCons[0].doctypes[0].codigodegeneracion.Replace("nulo", "");
@@ -541,7 +525,6 @@ namespace Ws_OLS
                                             "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
                         respuestaOLS.mensajeCompleto = respuestaMetodo;
                         respuestaOLS.numeroDocumento = correlativoConsulta;
-
 
                         //List<MapaResponse> respuestaOLSX = new List<MapaResponse>();
                         MapaResponse respuestaOLSX = new MapaResponse();
@@ -556,24 +539,54 @@ namespace Ws_OLS
                         controlOLS.CambiaEstadoSello(idRutaCons, tipoDocCon == "ccf" ? "C" : "F", fechaCon, numeroCon, respuestaOLSX.selloRecibido);
 
                         return respuestaOLS;
+                        //}
+                        //else if ((String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].sello) || respuestaCons[0].doctypes[0].sello == "0") && !String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].codigodegeneracion) && !String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].numerocontrol))
+                        //else if ((String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].sello) || respuestaCons[0].doctypes[0].sello == "0") && !String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].codigodegeneracion) && !String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].numerocontrol))
+                        //{
+                        //    MapaResponse respuestaOLSX = new MapaResponse();
+                        //    respuestaOLSX.codigoGeneracion = respuestaCons[0].doctypes[0].codigodegeneracion;
+                        //    respuestaOLSX.selloRecibido = respuestaCons[0].doctypes[0].sello;
+                        //    respuestaOLSX.numControl = respuestaCons[0].doctypes[0].numerocontrol;
 
+                        //    respuestaOLS.mensajeCompleto = "Contigencia sin firmar";
+                        //    respuestaOLS.respuestaOlShttp = respuestaOLSX;
+                        //    respuestaOLS.numeroDocumento = correlativoConsulta;
+                        //    respuestaOLS.ResultadoSatisfactorio = false;
+
+                        //    return respuestaOLS;
+                        //}
                     }
-                    else if ((String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].sello) || respuestaCons[0].doctypes[0].sello == "0") && !String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].codigodegeneracion) && !String.IsNullOrWhiteSpace(respuestaCons[0].doctypes[0].numerocontrol))
-                    {
-                        MapaResponse respuestaOLSX = new MapaResponse();
-                        respuestaOLSX.codigoGeneracion = respuestaCons[0].doctypes[0].codigodegeneracion;
-                        respuestaOLSX.selloRecibido = respuestaCons[0].doctypes[0].sello;
-                        respuestaOLSX.numControl = respuestaCons[0].doctypes[0].numerocontrol;
-
-                        respuestaOLS.mensajeCompleto = "Contigencia sin firmar";
-                        respuestaOLS.respuestaOlShttp = respuestaOLSX;
-                        respuestaOLS.numeroDocumento = correlativoConsulta;
-                        respuestaOLS.ResultadoSatisfactorio = false;
-
-                        return respuestaOLS;
-                    }
+                    
                 }
-               
+                else if (respuestaCons[0].doctypes[0].statusmh == "0") //0-CONTIGENCIA SIN FIRMAR
+                {
+                    MapaResponse respuestaOLSX = new MapaResponse();
+                    respuestaOLSX.codigoGeneracion = respuestaCons[0].doctypes[0].codigodegeneracion;
+                    respuestaOLSX.selloRecibido = respuestaCons[0].doctypes[0].sello;
+                    respuestaOLSX.numControl = respuestaCons[0].doctypes[0].numerocontrol;
+
+                    respuestaOLS.mensajeCompleto = "Contigencia sin firmar";
+                    respuestaOLS.respuestaOlShttp = respuestaOLSX;
+                    respuestaOLS.numeroDocumento = correlativoConsulta;
+                    respuestaOLS.ResultadoSatisfactorio = false;
+
+                    return respuestaOLS;
+                }
+                else if (respuestaCons[0].doctypes[0].statusmh == "2" && !reenvioOLS) //0-CONTIGENCIA SIN FIRMAR
+                {
+                    MapaResponse respuestaOLSX = new MapaResponse();
+                    respuestaOLSX.codigoGeneracion = respuestaCons[0].doctypes[0].codigodegeneracion;
+                    respuestaOLSX.selloRecibido = respuestaCons[0].doctypes[0].sello;
+                    respuestaOLSX.numControl = respuestaCons[0].doctypes[0].numerocontrol;
+
+                    respuestaOLS.mensajeCompleto = "ERROR-" + respuestaCons[0].doctypes[0].message;
+                    respuestaOLS.respuestaOlShttp = respuestaOLSX;
+                    respuestaOLS.numeroDocumento = correlativoConsulta;
+                    respuestaOLS.ResultadoSatisfactorio = false;
+                    respuestaOLS.esContigencia = true;
+
+                    return respuestaOLS;
+                }
             }
 
             //itera y recupera campos de las tablas
@@ -616,13 +629,17 @@ namespace Ws_OLS
                     }
                     maindata.terminal = ruta.ToString().Trim();
                     maindata.numFactura = row["Numero"].ToString().Trim();
-                    maindata.correlativoInterno = "AV_" + row["idSerie"].ToString().Trim()+"_"+row["Numero"].ToString().Trim();
+                    maindata.correlativoInterno = "AV_" + row["idSerie"].ToString().Trim() + "_" + row["Numero"].ToString().Trim();
                     maindata.numeroTransaccion = row["NumeroPedido"].ToString().Trim(); //numero de pedido
                     maindata.codigoUsuario = row["idempleado"].ToString().Trim();
                     maindata.nombreUsuario = _facturas.GetNombreUsuario(row["idempleado"].ToString());
                     maindata.correoUsuario = "";
                     maindata.serie = _facturas.GetNumSerie(ruta, row["idSerie"].ToString()).Trim();
-                    maindata.cajaSuc = ruta.ToString().Trim();
+                    string str = _facturas.GetRutaReparto(ruta.ToString());
+                    int targetLength = 4; // Longitud deseada de 4 posiciones
+
+                    string paddedStr = str.PadLeft(targetLength, '0');
+                    maindata.cajaSuc = _facturas.GetCentro(ruta.ToString()) + paddedStr;
                     maindata.tipoDocumento = row["TipoDocumento"].ToString().Trim() == "F" ? "FAC" : "CCF";
                     maindata.pdv = _facturas.GetNombreEstablecimiento(row["IdCliente"].ToString()); //ESTABLECIMIENTO
                                                                                                     //maindata.nitCliente = _facturas.GetNITCliente(row["IdCliente"].ToString().Trim()).Trim(); //DEBE APLICARSE TRIM
@@ -657,7 +674,14 @@ namespace Ws_OLS
                     }
                     //maindata.nrcCliente = "06141305710012";  //DEBE APLICARSE TRIM
                     maindata.duiCliente = _facturas.GetDUI(row["IdCliente"].ToString().Trim()).Trim();        //DEBE APLICARSE TRIM
-                    maindata.nrcCliente = _facturas.GetNRC(row["IdCliente"].ToString().Trim()).Trim();  //DEBE APLICARSE TRIM
+                    if (FC_tipo == "C") //OBIG CFF, NCM, NR
+                    {
+                        maindata.nrcCliente = _facturas.GetNRC(row["IdCliente"].ToString().Trim()).Trim();  //DEBE APLICARSE TRIM
+                    }
+                    else
+                    {
+                        maindata.nrcCliente = "";  //DEBE APLICARSE TRIM
+                    }
                     //if (docPos == 1)
                     //{
                     //    maindata.nrcCliente = "";  //DEBE APLICARSE TRIM
@@ -702,7 +726,7 @@ namespace Ws_OLS
                         }
                         else
                         {
-                            maindata.ventaTotal = Convert.ToDouble(row["Total"].ToString())-Convert.ToDouble(row["Percepcion"]);
+                            maindata.ventaTotal = Convert.ToDouble(row["Total"].ToString()) - Convert.ToDouble(row["Percepcion"]);
                             //maindata.subTotalVentasGravadas = Convert.ToDouble(row["SubTotal"]) + Convert.ToDouble(row["TotalIva"]);
                         }
                     }
@@ -716,7 +740,7 @@ namespace Ws_OLS
                     maindata.notaRemision = "";
                     maindata.noFecha = "";
                     maindata.saldoCapital = 0;
-                    maindata.idDepartamentoReceptor = "11";
+                    maindata.idDepartamentoReceptor = _facturas.GetIdDepartamento(row["idCliente"].ToString());
                     maindata.idDepartamentoEmisor = "05";
                     maindata.direccionEmisor = "0";
                     maindata.fechaEnvio = DateTime.Now.Date.ToString();
@@ -727,7 +751,6 @@ namespace Ws_OLS
 
                     if (FC_tipo == "F")
                     {
-
                         maindata.sumas = Convert.ToDouble(row["Total"].ToString());
                     }
                     else
@@ -821,7 +844,7 @@ namespace Ws_OLS
                     maindata.cesc = 0;
                     maindata.observacionesDte = "";
                     maindata.campo1 = "";
-                    maindata.campo2 = "0|"+row["IdCliente"].ToString() + "|" + _facturas.GetCodigoClientePrincipal(row["IdCliente"].ToString()) + "|" + _facturas.GetCentro(ruta.ToString()) + "|" + _facturas.GetZonaRuta(ruta.ToString()) + "|" + _facturas.GetCodigoRutaVenta(ruta.ToString()) + "|";
+                    maindata.campo2 = "0|" + row["IdCliente"].ToString() + "|" + _facturas.GetCodigoClientePrincipal(row["IdCliente"].ToString()) + "|" + _facturas.GetCentro(ruta.ToString()) + "|" + _facturas.GetZonaRuta(ruta.ToString()) + "|" + _facturas.GetCodigoRutaVenta(ruta.ToString()) + "|";
 
                     if (FC_tipo == "F") //añade si tipofacturacion
                     {
@@ -901,9 +924,10 @@ namespace Ws_OLS
                     maindata.bienTitulo = "0";
                     maindata.tipoDocumentoReceptor = tipoDocTempNIT;
 
-                    maindata.mostrarTributo = false;
-                    maindata.bienTitulo = "0";
-                    maindata.tipoDocumentoReceptor = tipoDocTempNIT;
+                    //maindata.mostrarTributo = false;
+                    //maindata.bienTitulo = "0";
+                    //maindata.tipoDocumentoReceptor = tipoDocTempNIT;
+                    maindata.formatodocumento = "movil400";
 
                     ListaOLS.Add(maindata);
 
@@ -913,15 +937,15 @@ namespace Ws_OLS
 
                     //REGION CONTACTO
                     List<Contacto> ListaContactos = new List<Contacto>
-                {
-                    new Contacto
                     {
-                        whatsapp="",
-                        sms="",
-                        email = "victor.duarte@somoscmi.com",
-                        telefono = "74658546"
-                    }
-                };
+                        new Contacto
+                        {
+                            whatsapp="",
+                            sms="",
+                            email =  "victor.duarte@somoscmi.com",
+                            telefono = "74658546",
+                        }
+                    };
                     maindata.contactos = ListaContactos;
 
                     #endregion Contacto
@@ -953,7 +977,6 @@ namespace Ws_OLS
                             }
                             Detalle detalle = new Detalle();
 
-                            
                             detalleOLS.Add(
                                 new Detalle
                                 {
@@ -986,7 +1009,6 @@ namespace Ws_OLS
                                 });
                             //detalleOLS.Add(detalle);
                             maindata.detalle = detalleOLS;
-
                         }
                     }
                     else
@@ -1024,7 +1046,7 @@ namespace Ws_OLS
                                     codTributo = null,
                                     tributos = null,
                                     //precioUnitario = _facturas.GetPrecioUnitarioDetalleFAC(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
-                                    precioUnitario = _facturas.CompruebaUnidadMedida(rowDeta["IdProductos"].ToString()) == "1" ? Convert.ToDecimal((Convert.ToDecimal(rowDeta["Valor"].ToString()) / Convert.ToDecimal(rowDeta["Unidades"].ToString())).ToString("N4")): Convert.ToDecimal((Convert.ToDecimal(rowDeta["Valor"].ToString()) / Convert.ToDecimal(rowDeta["Peso"].ToString())).ToString("N4")),
+                                    precioUnitario = _facturas.CompruebaUnidadMedida(rowDeta["IdProductos"].ToString()) == "1" ? Convert.ToDecimal((Convert.ToDecimal(rowDeta["Valor"].ToString()) / Convert.ToDecimal(rowDeta["Unidades"].ToString())).ToString("N4")) : Convert.ToDecimal((Convert.ToDecimal(rowDeta["Valor"].ToString()) / Convert.ToDecimal(rowDeta["Peso"].ToString())).ToString("N4")),
                                     ventasNoSujetas = 0,
                                     //ivaItem = _facturas.GetIVALineaFac(ruta, fecha, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
                                     ivaItem = String.IsNullOrWhiteSpace(rowDeta["Iva"].ToString()) ? 0 : Convert.ToDecimal(rowDeta["Iva"].ToString()),
@@ -1050,8 +1072,6 @@ namespace Ws_OLS
                             //detalleOLS.Add(detalle);
                             maindata.detalle = detalleOLS;
                         }
-
-                        
                     }
 
                     #endregion Detalle
@@ -1218,12 +1238,11 @@ namespace Ws_OLS
                     maindata.cajaSuc = row["IdSucursal"].ToString();
                     maindata.tipoDocumento = "FAC";
                     maindata.pdv = _facturasSala.GetNombreEstablecimiento(Convert.ToInt32(row["IdSucursal"].ToString())); //ESTABLECIMIENTO
-                                                                                                    //maindata.nitCliente = _facturas.GetNITCliente(row["IdCliente"].ToString().Trim()).Trim(); //DEBE APLICARSE TRIM
-
+                                                                                                                          //maindata.nitCliente = _facturas.GetNITCliente(row["IdCliente"].ToString().Trim()).Trim(); //DEBE APLICARSE TRIM
 
                     /*FALTA ESTO
-                     * 
-                     * 
+                     *
+                     *
                     string tipoDocTempNIT = "";
                     if (docPos == 1) //SI ES FACTURA O ANULACION
                     {
@@ -1280,13 +1299,13 @@ namespace Ws_OLS
                     //maindata.giro = _facturas.GetGiroNegocio(maindata.codigoCliente).Trim();
 
                     /* FALTA ESTO
-                     * 
-                     * 
-                     * 
-                     * 
-                     * 
-                     * 
-                     * 
+                     *
+                     *
+                     *
+                     *
+                     *
+                     *
+                     *
                      * */
                     ///LLENAR CATALOGO
                     if (FC_tipo == "C") //OBIG CFF, NCM, NR
@@ -1308,7 +1327,7 @@ namespace Ws_OLS
                     maindata.notaRemision = "";
                     maindata.noFecha = "";
                     maindata.saldoCapital = 0;
-                    maindata.idDepartamentoReceptor = "11"; 
+                    maindata.idDepartamentoReceptor = "11";
                     maindata.idDepartamentoEmisor = "05";
                     maindata.direccionEmisor = "0";
                     maindata.fechaEnvio = DateTime.Now.Date.ToString();
@@ -1491,13 +1510,13 @@ namespace Ws_OLS
                     //REGION CONTACTO
                     List<Contacto> ListaContactos = new List<Contacto>
                 {
-                    new Contacto
-                    {
-                        whatsapp="",
-                        sms="",
-                        email = "victor.duarte@somoscmi.com",
-                        telefono = "74658546"
-                    }
+                   new Contacto
+                        {
+                            whatsapp="",
+                            sms="",
+                            email = _facturas.GetCorreo(ListaOLS[0].codigoCliente)=="" || _facturas.GetCorreo(ListaOLS[0].codigoCliente)==null ? "victor.duarte@somoscmi.com":_facturas.GetCorreo(ListaOLS[0].codigoCliente),
+                            telefono = _facturas.GetTelefono(ListaOLS[0].codigoCliente)=="" || _facturas.GetTelefono(ListaOLS[0].codigoCliente)==null ? "74658546":_facturas.GetTelefono(ListaOLS[0].codigoCliente),
+                        }
                 };
                     maindata.contactos = ListaContactos;
 
@@ -1731,7 +1750,6 @@ namespace Ws_OLS
             string ipImpresora = preimArra[1];
             string campo3X = preimArra[2];
 
-
             string respuestaEnvio = "";
             string respuestaAnulacion = "";
             bool facturasFEL = false;
@@ -1926,7 +1944,7 @@ namespace Ws_OLS
                     if (FC_tipo == "C") ///CAMBIOS 1
                     {
                         //maindata.subTotalVentasGravadas = Convert.ToDouble(row["SubTotal"]) + Convert.ToDouble(row["Iva"]);
-                        maindata.subTotalVentasGravadas = Convert.ToDouble(row["SubTotal"]) - Convert.ToDouble(row["Iva"]); 
+                        maindata.subTotalVentasGravadas = Convert.ToDouble(row["SubTotal"]) - Convert.ToDouble(row["Iva"]);
                     }
                     else
                     {
@@ -2091,12 +2109,12 @@ namespace Ws_OLS
                     List<Contacto> ListaContactos = new List<Contacto>
                 {
                     new Contacto
-                    {
-                        whatsapp="",
-                        sms="",
-                        email = "victor.duarte@somoscmi.com",
-                        telefono = "78542563"
-                    }
+                        {
+                            whatsapp="",
+                            sms="",
+                            email = _facturas.GetCorreo(ListaOLS[0].codigoCliente)=="" || _facturas.GetCorreo(ListaOLS[0].codigoCliente)==null ? "victor.duarte@somoscmi.com":_facturas.GetCorreo(ListaOLS[0].codigoCliente),
+                            telefono = _facturas.GetTelefono(ListaOLS[0].codigoCliente)=="" || _facturas.GetTelefono(ListaOLS[0].codigoCliente)==null ? "74658546":_facturas.GetTelefono(ListaOLS[0].codigoCliente),
+                        }
                 };
                     maindata.contactos = ListaContactos;
 
@@ -2383,7 +2401,7 @@ namespace Ws_OLS
                     //maindata.giro = _facturas.GetGiroNegocio(maindata.codigoCliente).Trim();
                     maindata.codicionPago = "";
                     //maindata.ventaTotal = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
-                    maindata.ventaTotal = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()))+ Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
+                    maindata.ventaTotal = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
                     maindata.montoLetras = _facturas.GetMontoLetras(maindata.ventaTotal).Trim();
                     maindata.CCFAnterior = _nCreditos.GetCCFAnteriorNC(row["ZNROCF"].ToString()); //123
                     maindata.vtaACuentaDe = "";
@@ -2401,7 +2419,7 @@ namespace Ws_OLS
                     //maindata.codigoActividadEconomica = "01282";
                     //maindata.giro = _facturas.GetActividadEconomica(row["idCliente"].ToString());
                     //maindata.giro = "OTROS";
-                    maindata.sumas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()))+Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())); ;
+                    maindata.sumas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())); ;
                     maindata.subTotalVentasExentas = 0;
                     maindata.subTotalVentasNoSujetas = 0;
                     maindata.subTotalVentasGravadas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
@@ -2464,7 +2482,7 @@ namespace Ws_OLS
                     maindata.montGDescVentExentas = 0.0;
                     maindata.montGDescVentGrav = 0.0;
                     maindata.totOtroMonNoAfec = 0.0;
-                    maindata.totalAPagar = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()))+ Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
+                    maindata.totalAPagar = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
                     //maindata.totalAPagar = Convert.ToDouble(_nCreditos.GetTotalNc(row["ZNROCF"].ToString()));
                     maindata.responsableEmisor = "";
                     maindata.numDocEmisor = "";
@@ -2504,8 +2522,8 @@ namespace Ws_OLS
                         {
                             whatsapp="",
                             sms="",
-                            email = "victor.duarte@somoscmi.com",
-                            telefono = "78541562"
+                            email = _facturas.GetCorreo(ListaOLS[0].codigoCliente)=="" || _facturas.GetCorreo(ListaOLS[0].codigoCliente)==null ? "victor.duarte@somoscmi.com":_facturas.GetCorreo(ListaOLS[0].codigoCliente),
+                            telefono = _facturas.GetTelefono(ListaOLS[0].codigoCliente)=="" || _facturas.GetTelefono(ListaOLS[0].codigoCliente)==null ? "74658546":_facturas.GetTelefono(ListaOLS[0].codigoCliente),
                         }
                     };
                     maindata.contactos = ListaContactos;
@@ -2803,12 +2821,12 @@ namespace Ws_OLS
                     //REGION CONTACTO
                     List<Contacto> ListaContactos = new List<Contacto>
                     {
-                        new Contacto
+                       new Contacto
                         {
                             whatsapp="",
                             sms="",
-                            email = "victor.duarte@somoscmi.com",
-                            telefono = "78541562"
+                            email = _facturas.GetCorreo(ListaOLS[0].codigoCliente)=="" || _facturas.GetCorreo(ListaOLS[0].codigoCliente)==null ? "victor.duarte@somoscmi.com":_facturas.GetCorreo(ListaOLS[0].codigoCliente),
+                            telefono = _facturas.GetTelefono(ListaOLS[0].codigoCliente)=="" || _facturas.GetTelefono(ListaOLS[0].codigoCliente)==null ? "74658546":_facturas.GetTelefono(ListaOLS[0].codigoCliente),
                         }
                     };
                     maindata.contactos = ListaContactos;
@@ -3454,7 +3472,6 @@ namespace Ws_OLS
                 {
                     if (content == "null") //SERVICIO CAIDO
                     {
-
                         respuestaOLS.mensajeCompleto = "Servicio caido";
                         respuestaOLS.respuestaOlShttp = null;
                         respuestaOLS.numeroDocumento = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
@@ -3469,12 +3486,12 @@ namespace Ws_OLS
                     List<MapaResponse> jsonDocs = JsonConvert.DeserializeObject<List<MapaResponse>>(jsonTotal);
                     jsonDocs[0].JSONResultante = jsonFinal;
 
-                   
                     if (jsonDocs[0].message == "OK") //SI EL MENSAJE ES OK, EL JSON LLEGO A OLS
                     {
                         if (TipoDocEnvio == 1 || TipoDocEnvio == 6)
                         {
-                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                             resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
 
@@ -3490,7 +3507,8 @@ namespace Ws_OLS
                         }
                         else if (TipoDocEnvio == 2)
                         {
-                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                             resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                             controlOLS.ActualizaEstadoNotaCredito(jsonDocs[0].numControl, jsonDocs[0].codigoGeneracion, jsonDocs[0].selloRecibido, NC_Only);
@@ -3498,18 +3516,18 @@ namespace Ws_OLS
                         }
                         else
                         {
-                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                             resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                             controlOLS.CambiaEstadoNR(rutaTemp, fecha, facturaTemp, jsonDocs[0].selloRecibido); //SE CAMBIA EL ESTADO PARA NO CONTABILIZARLA NUEVAMENTE
                         }
 
                         facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
-                        rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                        //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                        rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                         resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                         string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
-
-                        
 
                         //controlOLS.RecLogBitacora(
                         //						1,
@@ -3530,13 +3548,11 @@ namespace Ws_OLS
                         respuestaOLS.ResultadoSatisfactorio = true;
                         respuestaOLS.esContigencia = false;
 
-                        if (String.IsNullOrWhiteSpace(respuestaOLS.respuestaOlShttp.selloRecibido) || respuestaOLS.respuestaOlShttp.selloRecibido=="0")
+                        if (String.IsNullOrWhiteSpace(respuestaOLS.respuestaOlShttp.selloRecibido) || respuestaOLS.respuestaOlShttp.selloRecibido == "0")
                         {
                             respuestaOLS.ResultadoSatisfactorio = false;
                             //respuestaOLS.esContigencia = true;
-
                         }
-                       
 
                         return respuestaOLS;
                     }
@@ -3544,7 +3560,6 @@ namespace Ws_OLS
                     {
                         if (content == null) //SERVICIO CAIDO
                         {
-
                             respuestaOLS.mensajeCompleto = "Servicio caido";
                             respuestaOLS.respuestaOlShttp = null;
                             respuestaOLS.numeroDocumento = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
@@ -3558,7 +3573,8 @@ namespace Ws_OLS
                         {
                             if (TipoDocEnvio == 1 || TipoDocEnvio == 6)
                             {
-                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                                 resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                                 facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
 
@@ -3574,14 +3590,17 @@ namespace Ws_OLS
                             }
                             else if (TipoDocEnvio == 2)
                             {
-                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                                 resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                                 facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                                 controlOLS.CambiaEstadoNC(rutaTemp, fecha, facturaTemp, jsonDocs[0].selloRecibido); //SE CAMBIA EL ESTADO PARA NO CONTABILIZARLA NUEVAMENTE
                             }
                             else
                             {
-                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
+
                                 resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                                 facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                                 controlOLS.CambiaEstadoNR(rutaTemp, fecha, facturaTemp, jsonDocs[0].selloRecibido); //SE CAMBIA EL ESTADO PARA NO CONTABILIZARLA NUEVAMENTE
@@ -3591,7 +3610,9 @@ namespace Ws_OLS
                         if (jsonDocs[0].message.Contains("CONTINGENCIA")) //EL DOCUMENTO ES CONTIGENCIA
                         {
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
-                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
+
                             resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                             string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
@@ -3614,13 +3635,12 @@ namespace Ws_OLS
                             respuestaOLS.numeroDocumento = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                             respuestaOLS.esContigencia = true;
                             respuestaOLS.ResultadoSatisfactorio = false;
-
-
                         }
                         else
                         {
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                             rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                             resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                             string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
@@ -3658,9 +3678,7 @@ namespace Ws_OLS
                             respuestaOLS.numeroDocumento = facturaTemp;
                             respuestaOLS.esContigencia = false;
                             respuestaOLS.ResultadoSatisfactorio = false;
-
                         }
-
 
                         return respuestaOLS;
                     }
@@ -3669,7 +3687,8 @@ namespace Ws_OLS
                 {
                     //jsonDocs[0].JSONResultante = jsonFinal;
                     facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
-                    rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                    //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                    rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                     resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                     string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
@@ -3782,7 +3801,8 @@ namespace Ws_OLS
                     {
                         if (TipoDocEnvio == 11 || TipoDocEnvio == 66)
                         {
-                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                            rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                             resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
 
@@ -3797,7 +3817,8 @@ namespace Ws_OLS
                         }
 
                         facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
-                        rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                        //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                        rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                         resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                         string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
@@ -3827,7 +3848,8 @@ namespace Ws_OLS
                         {
                             if (TipoDocEnvio == 11 || TipoDocEnvio == 66)
                             {
-                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                                rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                                 resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                                 facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
 
@@ -3842,7 +3864,8 @@ namespace Ws_OLS
                         }
 
                         facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
-                        rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                        //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                        rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                         resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                         string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
@@ -3873,7 +3896,8 @@ namespace Ws_OLS
                 {
                     //jsonDocs[0].JSONResultante = jsonFinal;
                     facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
-                    rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                    //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                    rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
                     resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                     string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
@@ -3959,7 +3983,7 @@ namespace Ws_OLS
                     string motivoDescripcion = _facturas.ObtieneMotivoAnulacion(Convert.ToInt32(idMotivo));
                     //MapaAnulacion DatosRawAnulacion=new MapaAnulacion();
                     DatosRawAnulacion.tipoDoc = _facturas.GetTipoDoc(Convert.ToInt32(fac_ruta[1]), fechaDoc, fac_ruta[0]) == "C" ? "CCF" : "FAC";
-                    
+
                     //if (DatosRawAnulacion.tipoDoc == "FAC")
                     //{
                     //    idSerieT = _facturas.GetIdSerie(Convert.ToInt32(fac_ruta[1]), "F", fechaAnu, fac_ruta[0]);
@@ -3968,13 +3992,12 @@ namespace Ws_OLS
                     //{
                     //    idSerieT = _facturas.GetIdSerie(Convert.ToInt32(fac_ruta[1]), "C", fechaAnu, fac_ruta[0]);
                     //}
-                    
 
                     DatosRawAnulacion.numDoc = 0;
                     DatosRawAnulacion.tipoDoc = _facturas.GetTipoDoc(Convert.ToInt32(fac_ruta[1]), fechaDoc, fac_ruta[0]) == "C" ? "CCF" : "FAC";
-                    DatosRawAnulacion.codigoGeneracion = _facturas.GetCodigoGeneracion(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc=="FAC"?"F":"C", fechaAnu, fac_ruta[0]);
+                    DatosRawAnulacion.codigoGeneracion = _facturas.GetCodigoGeneracion(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc == "FAC" ? "F" : "C", fechaAnu, fac_ruta[0]);
                     DatosRawAnulacion.nitEmisor = "0614-130571-001-2";
-                    DatosRawAnulacion.correlativoInterno = "AV_" + idSerieT+"_"+fac_ruta[0];
+                    DatosRawAnulacion.correlativoInterno = "AV_" + idSerieT + "_" + fac_ruta[0];
                     DatosRawAnulacion.fechaDoc = fechaDoc;
                     DatosRawAnulacion.fechaAnulacion = DateTime.Now.Date.ToString("yyyy-MM-dd");
                     DatosRawAnulacion.codigoGeneracionR = "";
@@ -3986,7 +4009,7 @@ namespace Ws_OLS
                     DatosRawAnulacion.numDocSolicita = "06141305710012";
                     DatosRawAnulacion.tipoAnulacion = 2;
                     DatosRawAnulacion.motivoAnulacion = "Rescindir de la operación realizada";
-                    revisarFEL= _facturas.GetCodigoSello(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc == "FAC" ? "F" : "C", fechaAnu, fac_ruta[0]);
+                    revisarFEL = _facturas.GetCodigoSello(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc == "FAC" ? "F" : "C", fechaAnu, fac_ruta[0]);
                 }
                 else
                 {
@@ -4015,13 +4038,13 @@ namespace Ws_OLS
                 }
 
                 //CONVERSION A JSON Y ENVIO
-                
+
                 string respuestaMetodo = "";
                 string jsonString = JsonConvert.SerializeObject(DatosRawAnulacion);
                 string jsonFinal = jsonString;
                 //string jsonFinal = jsonString.Substring(1, jsonString.Length - 2);
 
-                if(revisarFEL!="0" && revisarFEL != null)
+                if (revisarFEL != "0" && revisarFEL != null)
                 {
                     RestClient cliente = new RestClient(UrlJsonAnulacion)
                     {
@@ -4039,7 +4062,6 @@ namespace Ws_OLS
                     content = respond.Content;
                     HttpStatusCode httpStatusCode = respond.StatusCode;
                     numericStatusCode = (int)httpStatusCode;
-
                 }
                 else
                 {
@@ -4061,13 +4083,11 @@ namespace Ws_OLS
                     //string resultJson = jsonRespuesta2.result;
                     dynamic resultObject = JsonConvert.DeserializeObject(jsontt);
 
-
-
                     string docs = resultObject.ToString();
                     string jsonTotal = @"[" + docs + "]";
                     List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
 
-                    if (jsonDocs[0].status == 1 || jsonDocs[0].status==222) //SI EL MENSAJE ES OK, EL JSON LLEGO A OLS
+                    if (jsonDocs[0].status == 1 || jsonDocs[0].status == 222) //SI EL MENSAJE ES OK, EL JSON LLEGO A OLS
                     {
                         string facturaTemp = DatosRawAnulacion.correlativoInterno;
                         int rutaTemp = Convert.ToInt32(fac_ruta[1]);
@@ -4077,16 +4097,12 @@ namespace Ws_OLS
                             jsonDocs[0].selloRecibido = "0";
                         }
 
-
                         string descripcion = "Documento anulado a las " + DateTime.Now.ToString();
                         controlOLS.ActualizaHH_Anulacion(descripcion, jsonDocs[0].selloRecibido, jsonDocs[0].codigoGeneracion, Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
                         controlOLS.BorraReparto_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
                         controlOLS.BorraDevolucion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
                         controlOLS.InsertaAnulacion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], fac_ruta[2], idSerieT);
                         controlOLS.BorraPagos_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-
-
-
 
                         //string resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                         //string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
@@ -4128,7 +4144,7 @@ namespace Ws_OLS
                         //                "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
 
                         respuestaMetodo = @"Documento #" + fac_ruta[0] + "enviado!!!\n" +
-                                       "Tipo documento: " + DatosRawAnulacion.tipoDoc+" "+
+                                       "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
                                        "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
 
                         respuestaOLS1.mensajeCompleto = respuestaMetodo;
@@ -4151,8 +4167,6 @@ namespace Ws_OLS
                         //string resultJson = jsonRespuesta2.result;
                         //dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
 
-
-
                         //string docs = resultObject.ToString();
                         //string jsonTotal = @"[" + docs + "]";
                         //List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
@@ -4161,7 +4175,6 @@ namespace Ws_OLS
 
                         if (jsonDocs[0].statusMsg.Contains("DOCUMENTO SE ENCUENTA ANULADO"))
                         {
-
                         }
                         //controlOLS.RecLogBitacora(
                         //						0,
@@ -4215,8 +4228,6 @@ namespace Ws_OLS
                     dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
                     string resultJson = jsonRespuesta2.result;
                     dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
-
-
 
                     string docs = resultObject.ToString();
                     string jsonTotal = @"[" + docs + "]";
@@ -4348,4 +4359,5 @@ namespace Ws_OLS
             }
         }
     }
+
 }

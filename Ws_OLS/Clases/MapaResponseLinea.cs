@@ -40,6 +40,8 @@ namespace Ws_OLS.Clases
             public string sellorecibidoinvalidado { get; set; }
             public string codgeneracioninvalidado { get; set; }
             public string statusmh { get; set; }
+            public string mh { get; set; }
+            public string message { get; set; }
         }
 
         public class RespuestaConsulta
