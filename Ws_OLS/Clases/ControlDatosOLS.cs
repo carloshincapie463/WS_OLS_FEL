@@ -225,6 +225,46 @@ namespace Ws_OLS.Clases
             }
         }
 
+        //INGRESA DATO EN BITACORA FEL NUEVA
+        public void RecLogBitacoraFEL(int idRuta, int idSerie, string NumDoc, string jsonGenerado, string jsonResultante, string MensajeOLS)
+        {
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                string[] numeroDoc=NumDoc.Split('_');
+        
+                DateTime fechaActual = new DateTime();
+                fechaActual = DateTime.Now;
+                cnn.Open();
+                //string sqlQuery = @"SELECT idSerie
+                //                                FROM Facturacion.Series
+                //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
+                string sqlQuery = @"INSERT INTO vendemas.logFEL
+									VALUES(@idRuta, @idSerie, @NumDoc, @jsonGenerado, @jsonResultante, @MensajeOLS)";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idRuta", idRuta);
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    if (NumDoc.Contains("_"))
+                    {
+                        cmd.Parameters.AddWithValue("@NumDoc", numeroDoc[1]);
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@NumDoc", NumDoc);
+                    }
+                    
+                    cmd.Parameters.AddWithValue("@jsonGenerado", jsonGenerado);
+                    cmd.Parameters.AddWithValue("@jsonResultante", jsonResultante);
+                    cmd.Parameters.AddWithValue("@MensajeOLS", MensajeOLS);
+                    cmd.ExecuteNonQuery();
+                    //dsSumario.Tables.Add(dt);
+                }
+
+                cnn.Close();
+            }
+        }
+
         /***************************************/
         /***************ANULACIONES*************/
         /***************************************/

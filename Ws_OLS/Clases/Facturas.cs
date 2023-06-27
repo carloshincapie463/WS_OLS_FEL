@@ -1258,7 +1258,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Ruta
+                string sqlQuery = @"SELECT CodigoRuta
 									FROM dbo.Rutas
 									WHERE IdRuta=@idRuta AND IdTipoRuta=2";
 
@@ -1286,7 +1286,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT TelMovil
+                string sqlQuery = @"SELECT TRIM(TelMovil)
                                     FROM SAP.Clientes
                                     WHERE IdCliente =@Cliente";
 
@@ -1314,7 +1314,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CorreoElectronico
+                string sqlQuery = @"SELECT TRIM(CorreoElectronico)
                                     FROM SAP.Clientes
                                     WHERE IdCliente =@Cliente";
 
