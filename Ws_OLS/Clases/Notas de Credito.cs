@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Web;
 
 namespace Ws_OLS.Clases
 {
     public class Notas_de_Credito
     {
-        string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
+        private string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
 
         //OBTIENE CANTIDAD DE FILAS POR RUTA Y FECHA DONDE SEA FACTURA
         public DataTable CantidadNotasCredito(int ruta, string fecha, string facnum)
@@ -20,30 +17,37 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 //string sqlQuery = @"SELECT idSerie
-                //                                FROM Facturacion.Series 
+                //                                FROM Facturacion.Series
                 //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
                 //string sqlQuery = @"SELECT *
-                //					FROM Reparto.DocumentosFacturasEBajada 
+                //					FROM Reparto.DocumentosFacturasEBajada
                 //					WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha";
 
                 string sqlQuery;
                 //sqlQuery = @"SELECT *
-                //                FROM SAP.Liquidacion 
+                //                FROM SAP.Liquidacion
                 //                WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
                 //                AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZFE_CLAVE IS NULL";
                 if (facnum == "-1")
                 {
                     sqlQuery = @"SELECT *
-                                FROM SAP.Liquidacion 
+                                FROM SAP.Liquidacion
                                 WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
                                 AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZFE_CLAVE IS NULL";
                 }
                 else
                 {
-                    sqlQuery = @"SELECT *
-                                FROM SAP.Liquidacion 
-                                WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
-                                AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZNROCF=@factnum AND ZFE_CLAVE IS NULL";
+                    //sqlQuery = @"SELECT *
+                    //            FROM SAP.Liquidacion
+                    //            WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
+                    //            //AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZNROCF=@factnum AND ZFE_CLAVE IS NULL";
+
+                    sqlQuery = @"SELECT  serie + RIGHT('00000000' + LTRIM(RTRIM(STR(numeroformulario))), 8) as ZNROCF,
+                               IdFactura AS VBELNF, 
+                               IdCliente AS Vendedor, *
+                               FROM  Liquidaciones.NotasEncabezado e
+                                WHERE CAST(e.Fecha AS DATE) =@fecha AND e.Ruta =@ruta and MARCAFEL=1 AND FELAutorizacion IS NULL
+                                AND  serie + RIGHT('00000000' + LTRIM(RTRIM(STR(numeroformulario))), 8)=@factnum";
                 }
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -54,7 +58,7 @@ namespace Ws_OLS.Clases
                     {
                         cmd.Parameters.AddWithValue("@factnum", facnum);
                     }
-                   
+
                     SqlDataAdapter ds = new SqlDataAdapter(cmd);
                     ds.Fill(dt);
                     //dsSumario.Tables.Add(dt);
@@ -71,16 +75,12 @@ namespace Ws_OLS.Clases
             string resolucion = "";
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
-
                 string sqlQuery = "";
                 cnn.Open();
 
-                    sqlQuery = @"SELECT resolucion 
+                sqlQuery = @"SELECT resolucion
                                     FROM Facturacion.Series
                                     WHERE numeroSerie=@factura AND estado ='ACT'";
-
-                
-                
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -106,8 +106,8 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT numeroDel 
-                                    FROM Facturacion.Series 
+                string sqlQuery = @"SELECT numeroDel
+                                    FROM Facturacion.Series
                                     WHERE numeroSerie=@factura AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -163,7 +163,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT FechaAutorizacion
-                                    FROM Facturacion.Series 
+                                    FROM Facturacion.Series
                                     WHERE numeroSerie=@factura AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -191,7 +191,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT Serie
-                                    FROM Liquidaciones.NotasEncabezado 
+                                    FROM Liquidaciones.NotasEncabezado
                                     WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)='@factura'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -247,10 +247,10 @@ namespace Ws_OLS.Clases
                 string sqlQuery = "";
                 cnn.Open();
 
-                    sqlQuery = @"SELECT NumeroFormulario 
-                                 FROM Liquidaciones.NotasEncabezado 
+                sqlQuery = @"SELECT NumeroFormulario
+                                 FROM Liquidaciones.NotasEncabezado
                                  WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
-                
+
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@idFactura", idFactura);
@@ -276,12 +276,9 @@ namespace Ws_OLS.Clases
                 string sqlQuery = "";
                 cnn.Open();
 
-                    sqlQuery = @"SELECT idCliente 
-                                    FROM Liquidaciones.NotasEncabezado 
+                sqlQuery = @"SELECT idCliente
+                                    FROM Liquidaciones.NotasEncabezado
                                     WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
-
-
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -307,12 +304,10 @@ namespace Ws_OLS.Clases
             {
                 string sqlQuery = "";
                 cnn.Open();
-                    sqlQuery = @"
-                                    SELECT Total 
-                                    FROM Liquidaciones.NotasEncabezado 
+                sqlQuery = @"
+                                    SELECT Total
+                                    FROM Liquidaciones.NotasEncabezado
                                     WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
-
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -339,11 +334,10 @@ namespace Ws_OLS.Clases
                 string sqlQuery = "";
                 cnn.Open();
 
-                    sqlQuery = @"
-                                    SELECT SubTotal 
-                                    FROM Liquidaciones.NotasEncabezado 
+                sqlQuery = @"
+                                    SELECT SubTotal
+                                    FROM Liquidaciones.NotasEncabezado
                                     WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -369,8 +363,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"
-                                    SELECT IVA 
-                                    FROM Liquidaciones.NotasEncabezado 
+                                    SELECT IVA
+                                    FROM Liquidaciones.NotasEncabezado
                                     WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -399,7 +393,7 @@ namespace Ws_OLS.Clases
                 string sqlQuery = @"
                                     SELECT D.IVA
                                     FROM Liquidaciones.NotasDetalle D
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -427,8 +421,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"
-                                    SELECT Percepcion 
-                                    FROM Liquidaciones.NotasEncabezado 
+                                    SELECT Percepcion
+                                    FROM Liquidaciones.NotasEncabezado
                                     WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -454,10 +448,10 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT FF.FELSerie 
-                                    FROM Facturacion.FacturaE FF 
-                                    INNER JOIN Liquidaciones.FacturasE LE ON CONVERT(BIGINT,FF.FACTURA)=CONVERT(BIGINT,LE.FACTURA) 
-                                    INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura 
+                string sqlQuery = @"SELECT FF.FELSerie
+                                    FROM Facturacion.FacturaE FF
+                                    INNER JOIN Liquidaciones.FacturasE LE ON CONVERT(BIGINT,FF.FACTURA)=CONVERT(BIGINT,LE.FACTURA)
+                                    INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura
                                     AND FF.idCliente=LE.idCliente
                                     AND LE.idRutaReparto=FF.idRutaReparto
                                     AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idFactura";
@@ -487,7 +481,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT FELSerie 
+                string sqlQuery = @"SELECT FELSerie
                                     FROM Reparto.DocumentosFacturasEBajada
                                     WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
 
@@ -509,7 +503,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         //OBTIENE NUIT CLIENTE
         public string GetNITCliente(int ruta, string numero)
         {
@@ -517,10 +510,10 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente 
+                string sqlQuery = @"SELECT CD.DocumentoCliente
 									FROM  Reparto.DocumentosFacturasEBajada FEB
-									INNER JOIN Clientes.Documentos CD ON FEB.IdCliente = CD.IdCliente 
-									INNER JOIN Clientes.TiposDocumentos CT ON CT.IdTiposDocumento = CD.IdTiposDocumento 
+									INNER JOIN Clientes.Documentos CD ON FEB.IdCliente = CD.IdCliente
+									INNER JOIN Clientes.TiposDocumentos CT ON CT.IdTiposDocumento = CD.IdTiposDocumento
 									WHERE CD.IdTiposDocumento =1 AND idRuta=@ruta and Numero=@numero";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -547,10 +540,10 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente 
+                string sqlQuery = @"SELECT CD.DocumentoCliente
 									FROM Reparto.DocumentosFacturasEBajada FEB
-									INNER JOIN Clientes.Documentos CD ON FEB.IdCliente = CD.IdCliente 
-									INNER JOIN Clientes.TiposDocumentos CT ON CT.IdTiposDocumento = CD.IdTiposDocumento 
+									INNER JOIN Clientes.Documentos CD ON FEB.IdCliente = CD.IdCliente
+									INNER JOIN Clientes.TiposDocumentos CT ON CT.IdTiposDocumento = CD.IdTiposDocumento
 									WHERE CD.IdTiposDocumento =2 AND idRuta=@ruta AND Numero=@numero";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -577,10 +570,10 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente 
+                string sqlQuery = @"SELECT CD.DocumentoCliente
 									FROM Reparto.DocumentosFacturasEBajada FEB
-									INNER JOIN Clientes.Documentos CD ON FEB.IdCliente = CD.IdCliente 
-									INNER JOIN Clientes.TiposDocumentos CT ON CT.IdTiposDocumento = CD.IdTiposDocumento 
+									INNER JOIN Clientes.Documentos CD ON FEB.IdCliente = CD.IdCliente
+									INNER JOIN Clientes.TiposDocumentos CT ON CT.IdTiposDocumento = CD.IdTiposDocumento
 									WHERE CD.IdTiposDocumento =3 AND idRuta=@ruta AND Numero=@numero";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -601,7 +594,6 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
         //OBTIENE CANTIDAD TOTAL DE UNIDADES
         public double GetCantidadTotal(string idFactura)
         {
@@ -612,7 +604,7 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT SUM(D.Unidades)
                                     FROM Liquidaciones.NotasDetalle D
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -639,10 +631,10 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 //string sqlQuery = @"SELECT idSerie
-                //                                FROM Facturacion.Series 
+                //                                FROM Facturacion.Series
                 //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
                 string sqlQuery = @"SELECT idFacturaOriginal
-									FROM Reparto.DocumentosFacturasEBajada 
+									FROM Reparto.DocumentosFacturasEBajada
 									WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND Numero=@numero";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -662,9 +654,10 @@ namespace Ws_OLS.Clases
 
             return data;
         }
+
         /**********************DETALLE***********************/
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="ruta"></param>
         /// <param name="numero"></param>
@@ -679,10 +672,15 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT MATNR
-                                    FROM SAP.Liquidacion 
-                                    WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
-                                    AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZNROCF=@numero AND ZFE_CLAVE IS NULL ";
+                //string sqlQuery = @"SELECT MATNR
+                //                    FROM SAP.Liquidacion
+                //                    WHERE ZOPERAC IN ('01', '04', '05', '24', '74')
+                //                    AND CAST(Fecha AS DATE) =@fecha AND idRuta =@ruta AND ZNROCF=@numero AND ZFE_CLAVE IS NULL ";
+
+                string sqlQuery = @"SELECT idProductos AS MATNR
+                                   FROM  Liquidaciones.NotasEncabezado e  INNER JOIN Liquidaciones.NotasDetalle D ON E.Numero=D.Numero
+                                   WHERE CAST(e.Fecha AS DATE) =@fecha AND e.Ruta =@ruta and MARCAFEL=1 AND FELAutorizacion IS NULL
+                                   AND serie + RIGHT('00000000' + LTRIM(RTRIM(STR(numeroformulario))), 8)=@numero";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -700,7 +698,6 @@ namespace Ws_OLS.Clases
             return dt;
         }
 
-
         //OBTIENE CANTIDAD DE UNIDADES POR CADA DETALLE
         public double GetCantidadDetalle(string numero, string producto)
         {
@@ -710,12 +707,11 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT D.Unidades
                                     FROM Liquidaciones.NotasDetalle D
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-
                     cmd.Parameters.AddWithValue("@idFactura", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
@@ -731,7 +727,6 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
-
         //OBTIENE NOMBRE DEL PRODUCTO
         public string GetNombreProducto(string producto)
         {
@@ -739,10 +734,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT NombreCompleto 
-                                    FROM SAP.Productos 
+                string sqlQuery = @"SELECT NombreCompleto
+                                    FROM SAP.Productos
                                     WHERE idProducto = @producto";
-
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -760,8 +754,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-
-        //OBTIENE PESO DEL PRODUCTO 
+        //OBTIENE PESO DEL PRODUCTO
         public double GetPesoProductoDetalle(string numero, string producto)
         {
             string data = "";
@@ -770,7 +763,7 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT D.Peso
                                     FROM Liquidaciones.NotasDetalle D
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -790,7 +783,6 @@ namespace Ws_OLS.Clases
             return Convert.ToDouble(data);
         }
 
-
         //OBTIENE PRECIO UNITARIO DEL DETALLE
         public decimal GetPrecioUnitarioDetalle(string numero, string producto)
         {
@@ -800,7 +792,7 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT D.Precio
                                     FROM Liquidaciones.NotasDetalle D
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -829,12 +821,11 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT D.SubTotal
                                     FROM Liquidaciones.NotasDetalle D
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
-                { 
-                
+                {
                     cmd.Parameters.AddWithValue("@idFactura", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
                     SqlDataReader dr = cmd.ExecuteReader();
@@ -861,9 +852,8 @@ namespace Ws_OLS.Clases
                 cnn.Open();
                 string sqlQuery = @"SELECT ISNULL(IVA, 0) IVA
                                     FROM Liquidaciones.NotasDetalle D
-                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero 
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
-                                   
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -875,8 +865,6 @@ namespace Ws_OLS.Clases
                         data = dr[0].ToString();
                     }
                 }
-
-
 
                 cnn.Close();
             }

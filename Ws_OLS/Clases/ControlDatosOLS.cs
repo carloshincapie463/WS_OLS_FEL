@@ -415,9 +415,13 @@ namespace Ws_OLS.Clases
                 //string sqlQuery = @"SELECT idSerie
                 //                                FROM Facturacion.Series
                 //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
-                string sqlQuery = @"UPDATE SAP.Liquidacion
-                                        SET ZFE_NUMERO =@numero, ZFE_CLAVE =@sello, ZZBKTXT = @generacion
-                                        WHERE ZNROCF=@numeroID";
+                //string sqlQuery = @"UPDATE SAP.Liquidacion
+                //                        SET ZFE_NUMERO =@numero, ZFE_CLAVE =@sello, ZZBKTXT = @generacion
+                //                        WHERE ZNROCF=@numeroID";
+
+                string sqlQuery = @"UPDATE LiquidacioneS.NotasEncabezado 
+                                    SET FELSerie=@generacion,FELNUMERO=@numero,FELAutorizacion=@sello
+                                    WHERE  serie + RIGHT('00000000' + LTRIM(RTRIM(STR(numeroformulario))), 8)=@numeroID";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {

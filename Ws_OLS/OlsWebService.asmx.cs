@@ -2384,9 +2384,15 @@ namespace Ws_OLS
         /// <param name="numFac"></param>
         /// <returns></returns>
         [WebMethod(Description = "Envia solo Notas de Credito de SGR")]
-        public RespuestaOLS EnviarNotasCreditosSGR(string fecha, int ruta, string facNum)
+        public RespuestaOLS EnviarNotasCreditosSGR(string fecha, int ruta, string parametrosPreImpresa)
         {
             RespuestaOLS respuestaOLS = new RespuestaOLS();
+
+
+            string[] preimArra = parametrosPreImpresa.Split(',');
+            //long numFac = Convert.ToInt64(preimArra[0]);
+            string ipImpresora = preimArra[1];
+            string campo3X = preimArra[2];
 
 
             //string[] preimArra = parametrosPreImpresa.Split(',');
@@ -2412,7 +2418,7 @@ namespace Ws_OLS
             bool facturasFEL = false;
             //facturasFEL = _facturas.GetRutaFEL(ruta);
             ListaOLS.Clear();
-            DataTable NCTabla = _nCreditos.CantidadNotasCredito(ruta, fecha, facNum);
+            DataTable NCTabla = _nCreditos.CantidadNotasCredito(ruta, fecha, preimArra[0]);
 
             foreach (DataRow row in NCTabla.Rows)
             {
@@ -2495,10 +2501,11 @@ namespace Ws_OLS
                     //maindata.codigoActividadEconomica = "01282";
                     //maindata.giro = _facturas.GetActividadEconomica(row["idCliente"].ToString());
                     //maindata.giro = "OTROS";
-                    maindata.sumas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())); ;
+                    //maindata.sumas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
+                    maindata.sumas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
                     maindata.subTotalVentasExentas = 0;
                     maindata.subTotalVentasNoSujetas = 0;
-                    maindata.subTotalVentasGravadas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
+                    maindata.subTotalVentasGravadas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()))+ Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
                     maindata.iva = Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
                     maindata.renta = 0;
                     maindata.impuesto = Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
@@ -2539,6 +2546,14 @@ namespace Ws_OLS
                     maindata.campo2 = _facturas.GetCodigoClientePrincipal(maindata.codigoCliente) + "|" + maindata.codigoCliente + "|" + _facturas.GetCentro(ruta.ToString()) + "|" + _facturas.GetZonaRuta(ruta.ToString()) + _facturas.GetCodigoRutaVenta(ruta.ToString()) + "|GT10";
                     maindata.campo3 = _facturas.GetRutaVenta(maindata.codigoCliente);
                     maindata.campo4 = _facturas.GetRutaReparto(ruta.ToString());
+
+
+                    maindata.campo2 = ipImpresora + "|" + maindata.campo2;
+                    maindata.campo2 = maindata.campo2 + "|" + _facturas.GetRutaVenta(maindata.codigoCliente) + "|" + _facturas.GetRutaReparto(ruta.ToString());
+                    maindata.campo3 = "";
+                    //maindata.campo3 = campo3X;vueno
+                    //maindata.campo4 = _facturas.GetRutaReparto(ruta.ToString());
+                    maindata.campo4 = campo3X;
                     //maindata.tipoDteRel = "05";
                     maindata.numeroControl = "";
                     maindata.codigoGeneracion = null;
@@ -2593,15 +2608,15 @@ namespace Ws_OLS
 
                     //REGION CONTACTO
                     List<Contacto> ListaContactos = new List<Contacto>
-                    {
-                        new Contacto
+                {
+                    new Contacto
                         {
                             whatsapp="",
                             sms="",
-                            email = _facturas.GetCorreo(ListaOLS[0].codigoCliente)=="" || _facturas.GetCorreo(ListaOLS[0].codigoCliente)==null ? "victor.duarte@somoscmi.com":_facturas.GetCorreo(ListaOLS[0].codigoCliente),
+                            email = _facturas.GetCorreo(ListaOLS[0].codigoCliente)=="" || _facturas.GetCorreo(ListaOLS[0].codigoCliente)==null ? "cmia-fel-sv@somoscmi.com":_facturas.GetCorreo(ListaOLS[0].codigoCliente),
                             telefono = _facturas.GetTelefono(ListaOLS[0].codigoCliente)=="" || _facturas.GetTelefono(ListaOLS[0].codigoCliente)==null ? "74658546":_facturas.GetTelefono(ListaOLS[0].codigoCliente),
                         }
-                    };
+                };
                     maindata.contactos = ListaContactos;
 
                     #endregion Contacto
@@ -2674,7 +2689,7 @@ namespace Ws_OLS
 
                     #region ENVIAR/RECEPCION DATA
 
-                    string nuevoNC = Token + "|" + facNum;
+                    string nuevoNC = Token + "|" + preimArra[0];
 
                     respuestaOLS = EnvioDataOLS(ListaOLS, 2, fecha, nuevoNC);
                     respuestaEnvio = respuestaOLS.mensajeCompleto;
@@ -2683,12 +2698,35 @@ namespace Ws_OLS
                 }
                 catch (Exception ex)
                 {
-                    var s = new StackTrace(ex);
-                    var thisasm = Assembly.GetExecutingAssembly();
-                    var methodname = s.GetFrames().Select(f => f.GetMethod()).First(m => m.Module.Assembly == thisasm).Name;
-                    string errorMsj = @"Error interno:" + ex.Message.ToString() + "\n" +
-                             "Metodo:" + methodname;
-                    //GrabarErrorInternos(ruta, fecha, docPos, numFac, errorMsj);
+                    var stackTrace = new StackTrace(ex);
+                    var thisAssembly = Assembly.GetExecutingAssembly();
+                    var stackFrames = stackTrace.GetFrames();
+                    var method = stackFrames
+                        .Select(frame => frame.GetMethod())
+                        .FirstOrDefault(m => m.Module.Assembly == thisAssembly);
+
+                    var lineNumber = method != null ? stackFrames.First().GetFileLineNumber() : 0;
+                    var methodName = method != null ? method.Name : "Unknown";
+                    var fileName = method != null ? stackFrames.First().GetFileName() : "Unknown";
+                    var className = method != null ? method.DeclaringType.FullName : "Unknown";
+                    var namespaceName = method != null ? method.DeclaringType.Namespace : "Unknown";
+                    var parameters = method != null ? method.GetParameters() : null;
+                    var parameterInfo = parameters != null ? string.Join(", ", parameters.Select(p => $"{p.ParameterType.Name} {p.Name}")) : "No parameters";
+                    var innerExceptionInfo = ex.InnerException != null ?
+                        $"Excepción interna: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}" :
+                        "No excepción interna";
+
+                    var errorMsj = string.Format(
+                        "Error interno: {0}\n" +
+                        "Método: {1}\n" +
+                        "Número de línea: {2}\n" +
+                        "Archivo: {3}\n" +
+                        "Clase: {4}\n" +
+                        "Namespace: {5}\n" +
+                        "Parámetros: {6}\n" +
+                        "{7}",
+                        ex.Message, methodName, lineNumber, fileName, className, namespaceName, parameterInfo, innerExceptionInfo);
+
                     respuestaOLS.mensajeCompleto = errorMsj;
                     respuestaOLS.ResultadoSatisfactorio = false;
                 }
@@ -4182,6 +4220,20 @@ namespace Ws_OLS
                     controlOLS.BorraDevolucion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
                     controlOLS.InsertaAnulacion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], fac_ruta[2], idSerieT);
                     controlOLS.BorraPagos_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
+
+                    respuestaMetodo = @"Documento #" + fac_ruta[0] + " fue anulado internamente!!!\n" +
+                                      "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
+                                      "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+
+                    respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                    respuestaOLS1.numeroDocumento = fac_ruta[1];
+                    respuestaOLS1.respuestaOlShttp = null;
+                    respuestaOLS1.ResultadoSatisfactorio = true;
+
+
+                    //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+
+                    return respuestaOLS1;
                 }
                 int rutaTemp = Convert.ToInt32(fac_ruta[1]);
                 string facturaTemp = DatosRawAnulacion.correlativoInterno;
