@@ -932,9 +932,14 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
+                //       string sqlQuery = @"SELECT ActividadEconomica
+                //FROM SAP.PersonaT 
+                //                           WHERE CodFuncion = 15 AND RIGHT('0000000000' + LTRIM(RTRIM(STR(CodCliente))), 10) LIKE '%' + @idCliente + '%'";
+
                 string sqlQuery = @"SELECT ActividadEconomica
-									FROM SAP.PersonaT 
-                                    WHERE CodFuncion = 15 AND RIGHT('0000000000' + LTRIM(RTRIM(STR(CodCliente))), 10) LIKE '%' + @idCliente + '%'";
+                                    FROM SAP.PersonaT PT
+                                    INNER JOIN Clientes C ON C.IdClientePropietario = PT.CodCliente
+                                    WHERE CodFuncion = 15 AND IdCliente = @idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1286,7 +1291,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT TRIM(TelMovil)
+                string sqlQuery = @"SELECT RTRIM(TelMovil)
                                     FROM SAP.Clientes
                                     WHERE IdCliente =@Cliente";
 
@@ -1314,7 +1319,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT TRIM(CorreoElectronico)
+                string sqlQuery = @"SELECT RTRIM(CorreoElectronico)
                                     FROM SAP.Clientes
                                     WHERE IdCliente =@Cliente";
 

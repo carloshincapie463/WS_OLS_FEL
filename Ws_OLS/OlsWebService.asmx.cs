@@ -361,7 +361,7 @@ namespace Ws_OLS
             List<MapaResponseLinea.EnvioConsulta> listaOLS = new List<MapaResponseLinea.EnvioConsulta>();
             MapaResponseLinea.EnvioConsulta maindata = new MapaResponseLinea.EnvioConsulta();
             maindata.nitEmisor = "0614-130571-001-2";
-            maindata.ambiente = "00";
+            maindata.ambiente = "01";
 
             List<MapaResponseLinea.Doctype> doctypes = new List<MapaResponseLinea.Doctype>
                 {
@@ -387,6 +387,8 @@ namespace Ws_OLS
             {
                 Method = Method.POST
             };
+
+            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             request.Parameters.Clear();
             request.AddHeader("Authorization", Token);
             request.AddParameter("application/json", jsonSinCorchetes, ParameterType.RequestBody);
@@ -871,6 +873,9 @@ namespace Ws_OLS
                         maindata.campo2 = maindata.campo2 + "GT57|";
                     }
 
+                    
+                    maindata.campo2=maindata.campo2 +"|"+ _facturas.GetRutaVenta(row["IdCliente"].ToString())+"|"+ _facturas.GetRutaReparto(ruta.ToString());
+                    maindata.campo2 = maindata.campo2 + "||||||||||||";
                     if (row["NumeroPedido"].ToString() == "" || row["NumeroPedido"].ToString() == "0") //revisa la secuencia
                     {
                         maindata.campo2 = maindata.campo2 + "000";
@@ -879,7 +884,6 @@ namespace Ws_OLS
                     {
                         maindata.campo2 = maindata.campo2 + _facturas.GetSecuencia(row["NumeroPedido"].ToString());
                     }
-                    maindata.campo2=maindata.campo2 +"|"+ _facturas.GetRutaVenta(row["IdCliente"].ToString())+"|"+ _facturas.GetRutaReparto(ruta.ToString());
                     maindata.campo3 = "";
                     maindata.campo4 = "||||";
 
@@ -954,15 +958,15 @@ namespace Ws_OLS
 
                     //REGION CONTACTO
                     List<Contacto> ListaContactos = new List<Contacto>
-                    {
-                        new Contacto
+                {
+                    new Contacto
                         {
                             whatsapp="",
                             sms="",
-                            email =  "victor.duarte@somoscmi.com",
-                            telefono = "74658546",
+                            email = _facturas.GetCorreo(ListaOLS[0].codigoCliente)=="" || _facturas.GetCorreo(ListaOLS[0].codigoCliente)==null ? "cmia-fel-sv@somoscmi.com":_facturas.GetCorreo(ListaOLS[0].codigoCliente),
+                            telefono = _facturas.GetTelefono(ListaOLS[0].codigoCliente)=="" || _facturas.GetTelefono(ListaOLS[0].codigoCliente)==null ? "22021000":_facturas.GetTelefono(ListaOLS[0].codigoCliente),
                         }
-                    };
+                };
                     maindata.contactos = ListaContactos;
 
                     #endregion Contacto
@@ -4203,6 +4207,7 @@ namespace Ws_OLS
                     {
                         Method = Method.POST
                     };
+                    System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     request.Parameters.Clear();
                     request.AddHeader("Authorization", Token);
                     request.AddParameter("application/json", jsonFinal, ParameterType.RequestBody);
@@ -4488,7 +4493,7 @@ namespace Ws_OLS
             };
 
             request.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body), System.Text.Encoding.UTF8, "application/json");
-
+            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             HttpClient client = new HttpClient();
             var response = client.SendAsync(request).Result;
 
