@@ -84,7 +84,9 @@ namespace Ws_OLS.Clases
                                       AND TipoDocumento=@FC
                                       AND estado=@estado
 									  AND Numero=@numero
-                                      AND FELAutorizacion IS NULL";
+                                      AND ((len(FELAutorizacion)<10 OR  FELAutorizacion IS NULL)
+                                      OR (len(FELSerie)<10 OR  FELSerie IS NULL)
+                                      OR (len(FELNumero)<10 OR  FELNumero IS NULL))";
                     }
                 }
 

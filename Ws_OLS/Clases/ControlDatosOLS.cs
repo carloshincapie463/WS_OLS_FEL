@@ -23,7 +23,7 @@ namespace Ws_OLS.Clases
                 //      WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
                 string selloTemp = "";
 
-                if (!String.IsNullOrWhiteSpace(sello) && sello != "0")
+                if (!String.IsNullOrWhiteSpace(sello) && sello != "0" && sello.Length>10)
                 {
                     selloTemp = "FELAutorizacion = @sello,";
                 }

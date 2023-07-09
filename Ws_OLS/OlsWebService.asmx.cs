@@ -3758,7 +3758,7 @@ namespace Ws_OLS
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                             //rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
                             rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.terminal).FirstOrDefault());
-                            //serieTemp2 = Convert.ToInt32(DatosRaw.Select(x => x.serie).FirstOrDefault());
+                            serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
                             resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
                             string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
@@ -3774,7 +3774,7 @@ namespace Ws_OLS
                                                     jsonDocs[0].codigoGeneracion
                                                   ); //SE CAMBIA EL ESTADO DE LA FACTURA SI EL ENVIO ES EXITOSO
 
-                            //controlOLS.RecLogBitacoraFEL(rutaTemp, serieTemp2, facturaTemp, jsonFinal, jsonTotal);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                             respuestaOLS.mensajeCompleto = respuestaMetodo;
                             respuestaOLS.respuestaOlShttp = jsonDocs[0];
