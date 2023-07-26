@@ -121,7 +121,7 @@ namespace Ws_OLS.Clases
         public string campo2 { get; set; }
         public string nrc { get; set; }
         public string campo4 { get; set; }
-        public string tipoDteRel { get; set; }
+        //public string tipoDteRel { get; set; }
         public string tipoCatContribuyente { get; set; }
         public string CCFAnterior { get; set; }
         public string numeroTransaccion { get; set; }

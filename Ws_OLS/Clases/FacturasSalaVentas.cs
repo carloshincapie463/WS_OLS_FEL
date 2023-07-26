@@ -10,9 +10,8 @@ namespace Ws_OLS.Clases
     {
         //METODOS DE LLAMADA
 
-        private Database Db;
-
         private string connectionString = ConfigurationManager.ConnectionStrings["IPES_Sala"].ConnectionString;
+        private string connectionStringComercializacion = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
         //string connectionStringH = ConfigurationManager.ConnectionStrings["IPESH"].ConnectionString;
 
         //public Facturas()
@@ -43,8 +42,9 @@ namespace Ws_OLS.Clases
                 {
                     sqlQuery = @"SELECT *
 									  FROM PosIP.FacturaE
-									  WHERE CAST(FechaHora  AS DATE)='@fecha'
-									  AND Correlativo =@numero";
+									  WHERE CAST(FechaHora  AS DATE)=@fecha
+									  AND Correlativo =@numero AND IdSucursal=@ruta
+                                      AND FELSello IS NULL";
                 }
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -152,7 +152,7 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT resolucion
-                                    FROM Facturacion.Series
+                                    FROM PosIP.Series
                                     WHERE numeroSerie=@idSerie AND idSucursal=@ruta AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -176,7 +176,7 @@ namespace Ws_OLS.Clases
         public string GetTokenNow(string fecha)
         {
             string resolucion = "";
-            using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionStringComercializacion))
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT ISNULL((SELECT Token
@@ -202,7 +202,7 @@ namespace Ws_OLS.Clases
         //INSERTAR TOKEN EN LA BASE DE DATOS
         public void InsertaToken(string TokenI)
         {
-            using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionStringComercializacion))
             {
                 cnn.Open();
                 //string sqlQuery = @"SELECT idSerie
@@ -231,8 +231,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT numeroDel
-                                    FROM Facturacion.Series
-                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
+                                    FROM PosIP.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -260,8 +260,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT numeroAl
-                                    FROM Facturacion.Series
-                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
+                                    FROM PosIP.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -289,8 +289,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT FechaAutorizacion
-                                    FROM Facturacion.Series
-                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
+                                    FROM PosIP.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -319,8 +319,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT nit
-                                    FROM Facturacion.Series
-                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta";
+                                    FROM PosIP.Series
+                                    WHERE numeroSerie=@idSerie AND idSucursal=@ruta AND estado ='ACT'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -554,21 +554,23 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE DUI CLIENTE
-        public string GetDUI(string cliente)
+        public string GetDUI(string fecha, string numero)
         {
             string data = "";
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente
-									FROM Clientes.Documentos CD
-									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente
-									WHERE CD.IdTiposDocumento =2 AND C.IdCliente =@IdCliente";
+                string sqlQuery = @"SELECT Nit
+									FROM PosIP.FacturaE
+									 WHERE CAST(FechaHora AS DATE)=@fecha
+									 AND Correlativo =@numero 
+                                     AND FELSello IS NULL";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@IdCliente", cliente);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@numero", numero);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -650,8 +652,8 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT NombreCompleto
-                                    FROM dbo.Clientes
+                string sqlQuery = @"SELECT Nombre1
+                                    FROM sap.Clientes
                                     WHERE IdCliente=@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
@@ -671,20 +673,20 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE DIRECCION
-        public string GetDireccion(string idCliente)
+        public string GetDireccion(string corr)
         {
             string data = "";
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Direccion
-                                    FROM DireccionesClientes
-                                    WHERE IdCliente=@idCliente";
+                string sqlQuery = @"SELECT FelDireccion
+                                    FROM PosIP.FacturaE
+                                    WHERE Correlativo=@corre";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@idCliente", idCliente);
+                    cmd.Parameters.AddWithValue("@corre", corr);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -706,10 +708,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.NombreCompleto
-									FROM DireccionesClientes DC
-									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento
-									WHERE DC.IdCliente =@idCliente";
+                string sqlQuery = @"SELECT DirCalle2
+                                    FROM sap.Clientes
+                                    WHERE IdCliente=@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -734,10 +735,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.CodigoDepartamento
-									FROM DireccionesClientes DC
-									INNER JOIN Catalogos.Departamentos CD ON CD.IdDepartamento = DC.IdDepartamento
-									WHERE DC.IdCliente =@idCliente";
+                string sqlQuery = @"SELECT DirDepartamento
+                                    FROM sap.Clientes
+                                    WHERE IdCliente=@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -763,10 +763,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.NombreCompleto
-									FROM DireccionesClientes DC
-									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento
-									WHERE DC.IdCliente =@idCliente";
+                string sqlQuery = @"SELECT DirCiudad
+                                    FROM sap.Clientes
+                                    WHERE IdCliente=@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -791,10 +790,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT RIGHT(CD.CodigoMunicipio, 2) as CodigoMunicipio
-									FROM DireccionesClientes DC
-									INNER JOIN Catalogos.Municipios CD ON CD.IdDepartamento = DC.IdDepartamento
-									WHERE DC.IdCliente =@idCliente AND CD.IdMunicipio =DC.IdMunicipio ";
+                string sqlQuery = @"SELECT DirMunicipio
+                                    FROM sap.Clientes
+                                    WHERE IdCliente=@idCliente";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -848,8 +846,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT ActividadEconomica
-									FROM SAP.PersonaT
-                                    WHERE CodFuncion = 15 AND CodCliente=@idCliente";
+									FROM PosIP.PersonaT 
+                                    WHERE CodFuncion = 15 AND RIGHT('0000000000' + LTRIM(RTRIM(STR(CodCliente))), 10) LIKE '%' + @idCliente + '%'";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -984,7 +982,7 @@ namespace Ws_OLS.Clases
             return data;
         }
 
-        public double GetCantidadTotal(int ruta, string numero)
+        public double GetCantidadTotal(string numero)
         {
             string data = "";
 
@@ -993,13 +991,12 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT SUM(Unidades)
-                                    FROM HandHeld.FacturaDBajada
-                                    WHERE idRuta=@ruta AND Numero=@numero ";
+                string sqlQuery = @"SELECT SUM(Cantidad)
+                                    FROM PosIP.DetalleFactura
+                                    WHERE NoCorrelativo=@numero ";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@numero", numero);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
@@ -1079,9 +1076,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT Centro
-									FROM dbo.Rutas
-									WHERE IdRuta=@idRuta";
+                string sqlQuery = @"SELECT CentroSAP
+									FROM PosIP.Sucursal
+									WHERE IdSucursal=@idRuta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1107,10 +1104,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT DescripcionZona
-									FROM Catalogos.Zonas Z
-									INNER JOIN dbo.Rutas R ON R.IdZonaRuta=Z.IdZonaRuta
-									WHERE IdRuta=@idRuta";
+                string sqlQuery = @"SELECT Descripcion
+									FROM PosIP.Sucursal
+									WHERE IdSucursal=@idRuta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1168,9 +1164,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CodigoRuta
-									FROM dbo.Rutas
-									WHERE IdRuta=@idRuta AND IdTipoRuta=2";
+                string sqlQuery = @"SELECT Ruta
+									FROM PosIP.Sucursal
+									WHERE IdSucursal=@idRuta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1196,9 +1192,9 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CodigoRuta
-									FROM dbo.Rutas
-									WHERE IdRuta=@idRuta AND IdTipoRuta=1";
+                string sqlQuery = @"SELECT OficinaVenta
+									FROM PosIP.Sucursal
+									WHERE IdSucursal=@idRuta";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1288,9 +1284,128 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSerie,''), '0') FELSerie
-                                    FROM HandHeld.FacturaEBajada
-                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero AND TipoDocumento=@idTipo";
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELCodigoGeneracion,''), '0') FELCodigoGeneracion
+                                    FROM PosIP.FacturaE
+                                    WHERE IdSucursal=@ruta AND CAST(FechaHora AS DATE)=@fecha and Correlativo=@numero AND TipoDoc=@idTipo";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@idTipo", idTipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE TELEFONO
+        public string GetTelefono(string cliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT RTRIM(TelMovil)
+                                    FROM SAP.Clientes
+                                    WHERE IdCliente =@Cliente";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@cliente", cliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE CORREO
+        public string GetCorreo(string cliente)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT RTRIM(CorreoElectronico)
+                                    FROM SAP.Clientes
+                                    WHERE IdCliente =@Cliente";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@cliente", cliente);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        public string GetCodigoNumControl(int ruta, string idTipo, string fecha, string numero)
+        {
+            string data = "0";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELNumeroControl,''), '0') FELNumeroControl
+                                    FROM PosIP.FacturaE
+                                    WHERE IdSucursal=@ruta AND CAST(FechaHora AS DATE)=@fecha and Correlativo=@numero AND TipoDoc=@idTipo";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@ruta", ruta);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
+                    cmd.Parameters.AddWithValue("@idTipo", idTipo);
+                    cmd.Parameters.AddWithValue("@numero", numero);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //CAMPO FEL-OBTIENE CODIGO DE SELLO
+        public string GetCodigoSello(int ruta, string idTipo, string fecha, string numero)
+        {
+            string data = "0";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT COALESCE(NULLIF(FELSello,''), '0') FELSello 
+                                    FROM PosIP.FacturaE
+                                    WHERE IdSucursal=@ruta AND CAST(FechaHora AS DATE)=@fecha and Correlativo=@numero AND TipoDoc=@idTipo";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1344,22 +1459,22 @@ namespace Ws_OLS.Clases
         //CAMPO FEL-OBTIENE CODIGO DE GENERACION
         public string GetTipoDoc(int ruta, string fecha, string numero)
         {
-            string data = "0";
+            var data = "0";
             //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
-            using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (var cnn = new SqlConnection(connectionString))
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT TipoDocumento
-                                    FROM HandHeld.FacturaEBajada
-                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha and Numero=@numero";
+                const string sqlQuery = @"SELECT TipoDoc
+                                    FROM PosIP.FacturaE
+                                    WHERE IdSucursal=@ruta AND CAST(FechaHora AS DATE)=@fecha and Correlativo=@numero";
 
-                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                using (var cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@fecha", fecha);
                     cmd.Parameters.AddWithValue("@numero", numero);
-                    SqlDataReader dr = cmd.ExecuteReader();
+                    var dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
                         data = dr[0].ToString();
@@ -1413,7 +1528,7 @@ namespace Ws_OLS.Clases
         /// <returns></returns>
 
         //OBTIENE DETALLE POR FACTURAS
-        public DataTable CantidadDetalle(int ruta, string numero, string fecha)
+        public DataTable CantidadDetalle(string numero)
         {
             DataTable dt = new DataTable();
 
@@ -1422,15 +1537,13 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT IdProductos
-                                    FROM HandHeld.FacturaDBajada
-                                    WHERE idRuta=@ruta AND CAST(Fecha AS DATE)=@fecha AND Numero=@numero
-									ORDER BY IdProductos ASC";
+                string sqlQuery = @"SELECT *
+                                    FROM PosIP.DetalleFactura
+                                    WHERE NoCorrelativo=@numero
+									ORDER BY IdPlu ASC";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@ruta", ruta);
-                    cmd.Parameters.AddWithValue("@fecha", fecha);
                     cmd.Parameters.AddWithValue("@numero", numero);
                     SqlDataAdapter ds = new SqlDataAdapter(cmd);
                     ds.Fill(dt);
@@ -1541,9 +1654,10 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT NombreCompleto
-                                    FROM SAP.Productos
-                                    WHERE idProducto = @producto";
+                string sqlQuery = @"SELECT S.NombreCompleto 
+                                    FROM PosIP.Productos S
+                                    INNER JOIN PosIP.PLU P ON P.IdProducto = S.CodigoSAP 
+                                    WHERE P.IdPLU =@producto";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -1579,6 +1693,35 @@ namespace Ws_OLS.Clases
                     cmd.Parameters.AddWithValue("@ruta", ruta);
                     cmd.Parameters.AddWithValue("@numero", numero);
                     cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDouble(data);
+        }
+
+        //OBTIENE PESO DEL PRODUCTO
+        public double GetSubTotal(string numero)
+        {
+            string data = "";
+            //using (SqlConnection cnn = new SqlConnection(connectionString)) using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT SUM(SubTotal)
+                                    FROM PosIP.DetalleFactura
+                                    WHERE NoCorrelativo=@numero";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@numero", numero);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
