@@ -172,6 +172,33 @@ namespace Ws_OLS.Clases
             return resolucion;
         }
 
+        //OBTIENE DIRECCION EMISOR
+        public string GetDireccionSucursal(string idSerie)
+        {
+            string resolucion = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CONCAT(datoAdicional1, datoAdicional2, datoAdicional3,datoAdicional4, datoAdicional5) AS palabra
+                                    FROM PosIP.Series
+                                    WHERE numeroSerie=@idSerie AND estado ='ACT'";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idSerie", idSerie);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        resolucion = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return resolucion;
+        }
+
         //OBTIENE TOKEN DE FECHA ACTUAL
         public string GetTokenNow(string fecha)
         {
@@ -585,21 +612,20 @@ namespace Ws_OLS.Clases
         }
 
         //OBTIENE NRC CLIENTE
-        public string GetNRC(string cliente)
+        public string GetNRC(string corr)
         {
             string data = "";
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT CD.DocumentoCliente
-									FROM Clientes.Documentos CD
-									INNER JOIN Clientes C ON C.IdClientePropietario = CD.IdCliente
-									WHERE CD.IdTiposDocumento =3 AND C.IdCliente =@IdCliente";
+                string sqlQuery = @"SELECT nrc
+									FROM PosIP.FacturaE
+									WHERE correlativo =@corr";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
-                    cmd.Parameters.AddWithValue("@IdCliente", cliente);
+                    cmd.Parameters.AddWithValue("@corr", corr);
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())
                     {
@@ -991,7 +1017,7 @@ namespace Ws_OLS.Clases
             //using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT SUM(Cantidad)
+                string sqlQuery = @"SELECT CAST(ROUND(SUM(Cantidad), 0) AS INT) AS TotalRedondeado
                                     FROM PosIP.DetalleFactura
                                     WHERE NoCorrelativo=@numero ";
 
@@ -1583,6 +1609,64 @@ namespace Ws_OLS.Clases
             }
 
             return dt;
+        }
+
+        //OBTIENE CODIGO SAP
+        public string GetCodigoSap(string producto)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+                //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT s.CodigoSAP 
+                                    FROM PosIP.Productos S
+                                    INNER JOIN PosIP.PLU P ON P.IdProducto = S.CodigoSAP 
+                                    WHERE P.IdPLU =@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
+        }
+
+        //OBTIENE CODIGO SAP
+        public string GetNombreSAP(string producto)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+                //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT s.NombreCompleto  
+                                    FROM PosIP.Productos S
+                                    INNER JOIN PosIP.PLU P ON P.IdProducto = S.CodigoSAP 
+                                    WHERE P.IdPLU =@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return data;
         }
 
         //OBTIENE CANTIDAD DE UNIDADES POR CADA DETALLE

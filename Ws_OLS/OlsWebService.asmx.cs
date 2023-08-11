@@ -50,6 +50,7 @@ namespace Ws_OLS
         private readonly string UrlJsonAnulacion = ConfigurationManager.AppSettings["EnvioJSONAnulacion"];
         private readonly string UrlRevisaLinea = ConfigurationManager.AppSettings["RevisaLinea"];
         private readonly string UrlObtieneFactura = ConfigurationManager.AppSettings["InfoFactura"];
+        private readonly string AmbienteCodigo = ConfigurationManager.AppSettings["ambiente"];
 
         //CREDENCIALES
         private readonly string UsuarioHead = ConfigurationManager.AppSettings["Usuario"];
@@ -361,7 +362,7 @@ namespace Ws_OLS
             List<MapaResponseLinea.EnvioConsulta> listaOLS = new List<MapaResponseLinea.EnvioConsulta>();
             MapaResponseLinea.EnvioConsulta maindata = new MapaResponseLinea.EnvioConsulta();
             maindata.nitEmisor = "0614-130571-001-2";
-            maindata.ambiente = "00";
+            maindata.ambiente = AmbienteCodigo;
 
             List<MapaResponseLinea.Doctype> doctypes = new List<MapaResponseLinea.Doctype>
                 {
@@ -551,7 +552,8 @@ namespace Ws_OLS
                         respuestaOLS.ResultadoSatisfactorio = true;
 
                         ControlDatosOLS controlOls = new ControlDatosOLS();
-                        controlOLS.CambiaEstadoSello(idRutaCons, tipoDocCon == "ccf" ? "C" : "F", fechaCon, numeroCon, respuestaOLSX.selloRecibido);
+                        //controlOLS.CambiaEstadoSello(idRutaCons, tipoDocCon == "ccf" ? "C" : "F", fechaCon, numeroCon, respuestaOLSX.selloRecibido);
+                        controlOLS.CambiaEstadoSello(idRutaCons, tipoDocCon == "ccf" ? "C" : "F", fechaCon, numeroCon, respuestaOLSX.selloRecibido, respuestaOLSX.codigoGeneracion, respuestaOLSX.numControl);
 
                         return respuestaOLS;
                         //}
@@ -728,8 +730,8 @@ namespace Ws_OLS
                     }
                     else  //FAC
                     {
-                        maindata.codigoActividadEconomica = _facturas.GetGiroNegocio2(row["IdCliente"].ToString().Trim());
-                        maindata.giro = _facturas.GetActividadEconomica(maindata.codigoActividadEconomica);
+                        maindata.codigoActividadEconomica = "";
+                        maindata.giro = "";
                     }
 
                     maindata.codicionPago = row["IdCondicionPago"].ToString().Trim() == "1" ? "CONTADO" : "CREDITO";
@@ -744,7 +746,7 @@ namespace Ws_OLS
                         }
                         else
                         {
-                            maindata.ventaTotal = Convert.ToDouble(row["Total"].ToString()) - Convert.ToDouble(row["Percepcion"]);
+                            maindata.ventaTotal = Convert.ToDouble(Convert.ToDecimal(row["Total"].ToString()) - Convert.ToDecimal(row["Percepcion"]));
                             //maindata.subTotalVentasGravadas = Convert.ToDouble(row["SubTotal"]) + Convert.ToDouble(row["TotalIva"]);
                         }
                     }
@@ -761,7 +763,7 @@ namespace Ws_OLS
                     maindata.idDepartamentoReceptor = _facturas.GetIdDepartamento(row["idCliente"].ToString());
                     maindata.idDepartamentoEmisor = "05";
                     maindata.direccionEmisor = "0";
-                    maindata.fechaEnvio = DateTime.Now.Date.ToString();
+                    //maindata.fechaEnvio = DateTime.Now.Date.ToString();
                     maindata.idMunicipioEmisor = "11";
                     maindata.idMunicipioReceptor = _facturas.GetIdMunicipio(row["IdCliente"].ToString());
                     //maindata.codigoActividadEconomica = "01460";
@@ -1462,11 +1464,11 @@ namespace Ws_OLS
                     if (FC_tipo == "C") //OBIG CFF, NCM, NR
                     {
                         //maindata.nrcCliente = _facturasSala.GetDUI(fecha, row["Correlativo"].ToString().Trim()).Trim();    //DEBE APLICARSE TRIM
-                        maindata.nrcCliente = "";    //DEBE APLICARSE TRIM
+                        maindata.nrcCliente = _facturasSala.GetNRC(row["Correlativo"].ToString().Trim());
                     }
                     else
                     {
-                        maindata.nrcCliente = "";  //DEBE APLICARSE TRIM
+                        maindata.nrcCliente = _facturasSala.GetNRC(row["Correlativo"].ToString().Trim());
                     }
                     //if (docPos == 1)
                     //{
@@ -1530,14 +1532,30 @@ namespace Ws_OLS
                     maindata.notaRemision = "";
                     maindata.noFecha = "";
                     maindata.saldoCapital = 0;
-                    maindata.idDepartamentoReceptor = _facturasSala.GetIdDepartamento(row["idCliente"].ToString()) == "" ? "06" : _facturasSala.GetIdDepartamento(row["idCliente"].ToString());
+                    //maindata.idDepartamentoReceptor = _facturasSala.GetIdDepartamento(row["idCliente"].ToString()) == "" ? "06" : _facturasSala.GetIdDepartamento(row["idCliente"].ToString());
+                    //maindata.idMunicipioReceptor = _facturasSala.GetIdMunicipio(row["IdCliente"].ToString()) == "" ? "14" : _facturasSala.GetIdMunicipio(row["IdCliente"].ToString());
+                    if (_facturasSala.GetIdDepartamento(row["idCliente"].ToString())=="" || _facturasSala.GetIdMunicipio(row["IdCliente"].ToString()) == "")
+                    {
+                        maindata.idDepartamentoReceptor = "06";
+                        maindata.idMunicipioReceptor = "14";
+                    }
+                    else
+                    {
+                        maindata.idDepartamentoReceptor = _facturasSala.GetIdDepartamento(row["idCliente"].ToString()) == "" ? "06" : _facturasSala.GetIdDepartamento(row["idCliente"].ToString());
+                        maindata.idMunicipioReceptor = _facturasSala.GetIdMunicipio(row["IdCliente"].ToString()) == "" ? "14" : _facturasSala.GetIdMunicipio(row["IdCliente"].ToString());
+                    }
                     maindata.idDepartamentoEmisor = "05";
-                    maindata.direccionEmisor = "0";
+                    maindata.direccionEmisor = _facturasSala.GetDireccionSucursal(row["NumeroSerie"].ToString().Trim());
                     maindata.fechaEnvio = DateTime.Now.Date.ToString();
                     maindata.idMunicipioEmisor = "11";
-                    maindata.idMunicipioReceptor = _facturasSala.GetIdMunicipio(row["IdCliente"].ToString()) == "" ? "14" : _facturasSala.GetIdMunicipio(row["IdCliente"].ToString());
+                    
                     //maindata.codigoActividadEconomica = "01460";
                     maindata.tipoCatContribuyente = "0";
+
+                    decimal totalXTemp;
+                    totalXTemp = Convert.ToDecimal(row["Total"]);
+                    decimal resultadoTotal = totalXTemp / Convert.ToDecimal(1.13);
+                    resultadoTotal = resultadoTotal * Convert.ToDecimal(0.13);
 
                     if (FC_tipo == "F")
                     {
@@ -1545,14 +1563,11 @@ namespace Ws_OLS
                     }
                     else
                     {
-                        maindata.sumas = Convert.ToDouble(_facturasSala.GetSubTotal(row["Correlativo"].ToString()));
+                        maindata.sumas = Convert.ToDouble(Convert.ToDecimal(_facturasSala.GetSubTotal(row["Correlativo"].ToString())) - Convert.ToDecimal((resultadoTotal).ToString("N2")));
                     }
                     maindata.subTotalVentasExentas = 0;
                     maindata.subTotalVentasNoSujetas = 0;
-                    decimal totalXTemp;
-                    totalXTemp = Convert.ToDecimal(row["Total"]);
-                    decimal resultadoTotal = totalXTemp / Convert.ToDecimal(1.13);
-                    resultadoTotal = resultadoTotal * Convert.ToDecimal(0.13);
+                   
                     if (FC_tipo == "C")
                     {
                         //maindata.subTotalVentasGravadas = Convert.ToDouble(row["SubTotal"]) + Convert.ToDouble(row["TotalIva"]);
@@ -1566,7 +1581,7 @@ namespace Ws_OLS
                         {
                             
                             //maindata.subTotalVentasGravadas = Convert.ToDouble(row["SubTotal"]) + Convert.ToDouble(row["TotalIva"])+Convert.ToDouble(row["Percepcion"]);
-                            maindata.subTotalVentasGravadas = Convert.ToDouble(Convert.ToDecimal(_facturasSala.GetSubTotal(row["Correlativo"].ToString())) + Convert.ToDecimal(resultadoTotal.ToString("F2")));
+                            maindata.subTotalVentasGravadas = Convert.ToDouble(row["Total"]);
                         }
                     }
                     else
@@ -1586,7 +1601,7 @@ namespace Ws_OLS
                     maindata.impuesto = Convert.ToDouble(resultadoTotal.ToString("N2"));
                     if (FC_tipo == "C")
                     {
-                        maindata.ventasGravadas = Convert.ToDouble(_facturasSala.GetSubTotal(row["Correlativo"].ToString()));
+                        maindata.ventasGravadas = Convert.ToDouble(Convert.ToDecimal(_facturasSala.GetSubTotal(row["Correlativo"].ToString()))-Convert.ToDecimal((resultadoTotal).ToString("N2")));
                     }
                     else
                     { //SI ES FACTYRA
@@ -1767,7 +1782,10 @@ namespace Ws_OLS
                             if (rowDeta["UnidadMedida"].ToString() == "1")
                             {
                                 //cantidadTem = _facturas.GetCantidadDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString());
-                                cantidadTem = Convert.ToDouble(rowDeta["Cantidad"].ToString());
+                                string cantidadStr = rowDeta["Cantidad"].ToString();
+                                double cantidadDouble = Convert.ToDouble(cantidadStr);
+                                int cantidadRedondeada = Convert.ToInt32(Math.Round(cantidadDouble));
+                                cantidadTem = cantidadRedondeada;
                             }
                             else
                             {
@@ -1781,15 +1799,19 @@ namespace Ws_OLS
                             decimal resultadoTotalUnitario = totalXTempUnitario / Convert.ToDecimal(1.13);
                             resultadoTotalUnitario= resultadoTotalUnitario * Convert.ToDecimal(0.13);
 
+                            double totalTotal = Convert.ToDouble((Convert.ToDecimal(rowDeta["SubTotal"].ToString()) -
+                                                                  Convert.ToDecimal(resultadoTotalUnitario)).ToString("N4"));
+
                             detalleOLS.Add(
                                 new Detalle
                                 {
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
-                                    descripcion = rowDeta["IdPlu"].ToString() + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreProducto(rowDeta["IdPlu"].ToString()) + "|" + rowDeta["IdPlu"].ToString() + "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
+                                    descripcion = _facturasSala.GetCodigoSap(rowDeta["IdPlu"].ToString()) + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreSAP(rowDeta["IdPlu"].ToString()) + "|" + rowDeta["IdPlu"].ToString() + "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
                                     codTributo = null,
                                     tributos = new List<string>() { "20" },
                                     //precioUnitario = _facturas.GetPrecioUnitarioDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
-                                    precioUnitario = Convert.ToDecimal((Convert.ToDecimal(rowDeta["PrecioPlu"].ToString())).ToString("N4")),
+                                    //precioUnitario = Convert.ToDecimal((Convert.ToDecimal(rowDeta["PrecioPlu"].ToString())).ToString("N4")),
+                                    precioUnitario = Convert.ToDecimal(Convert.ToDecimal(totalTotal.ToString("N2"))/Convert.ToDecimal(cantidadTem.ToString(("N2")))),
                                     ventasNoSujetas = 0,
                                     //ivaItem = _facturas.GetIVALineaFac(ruta, fecha, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
                                     ivaItem = Convert.ToDecimal(resultadoTotalUnitario.ToString("N2")),
@@ -1804,7 +1826,8 @@ namespace Ws_OLS
                                     codigoRetencionMH = "",
                                     cantidad = cantidadTem,
                                     //ventasGravadas = _facturas.GetVentasGravadasDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()),
-                                    ventasGravadas = Convert.ToDouble((Convert.ToDouble(rowDeta["SubTotal"].ToString()) - Convert.ToDouble(resultadoTotalUnitario)).ToString("N4")),
+                                    ventasGravadas = Convert.ToDouble((Convert.ToDecimal(rowDeta["SubTotal"].ToString()) - Convert.ToDecimal(resultadoTotalUnitario)).ToString("N4")),
+                                    //ventasGravadas = Convert.ToDouble((Convert.ToDecimal(rowDeta["SubTotal"].ToString()))),
                                     ivaRetenido = 0.0,
                                     //desc = _facturas.GetDescuentoPrecioDetalle(ruta, fecha, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()),
                                     desc = "0",
@@ -1822,7 +1845,10 @@ namespace Ws_OLS
                             if (rowDeta["UnidadMedida"].ToString() == "1")
                             {
                                 //cantidadTem = _facturas.GetCantidadDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString());
-                                cantidadTem = Convert.ToDouble(rowDeta["Cantidad"].ToString());
+                                string cantidadStr = rowDeta["Cantidad"].ToString();
+                                double cantidadDouble = Convert.ToDouble(cantidadStr);
+                                int cantidadRedondeada = Convert.ToInt32(Math.Round(cantidadDouble));
+                                cantidadTem = cantidadRedondeada;
                             }
                             else
                             {
@@ -1853,7 +1879,7 @@ namespace Ws_OLS
 
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
-                                    descripcion = rowDeta["IdPlu"].ToString() + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreProducto(rowDeta["IdPlu"].ToString()) + "|" + rowDeta["IdPlu"].ToString() + "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
+                                    descripcion = _facturasSala.GetCodigoSap(rowDeta["IdPlu"].ToString()) + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreSAP(rowDeta["IdPlu"].ToString()) + "|" + rowDeta["IdPlu"].ToString() + "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
                                     codTributo = null,
                                     tributos = null,
                                     //precioUnitario = _facturas.GetPrecioUnitarioDetalleFAC(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
@@ -3863,7 +3889,8 @@ namespace Ws_OLS
                                               ); //SE CAMBIA EL ESTADO DE LA FACTURA SI EL ENVIO ES EXITOSO
 
                             serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]) , facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]) , facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]) , facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                         }
                         else if (TipoDocEnvio == 2)
                         {
@@ -3874,7 +3901,8 @@ namespace Ws_OLS
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                             controlOLS.ActualizaEstadoNotaCredito(jsonDocs[0].numControl, jsonDocs[0].codigoGeneracion, jsonDocs[0].selloRecibido, NC_Only);
                             serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                             //controlOLS.CambiaEstadoNC(rutaTemp, fecha, facturaTemp, jsonDocs[0].selloRecibido, jsonDocs[0].selloRecibido, NC_Only); //SE CAMBIA EL ESTADO PARA NO CONTABILIZARLA NUEVAMENTE
                         }
                         else
@@ -3955,7 +3983,8 @@ namespace Ws_OLS
                                 respuestaOLS.ResultadoSatisfactorio = true;
 
                                 serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                                 respuestaMetodo = @"Documento ya existente,se actualizan datos!!!\n";
 
@@ -3975,7 +4004,8 @@ namespace Ws_OLS
                                 respuestaOLS.ResultadoSatisfactorio = true;
                                 controlOLS.CambiaEstadoNC(rutaTemp, fecha, facturaTemp, jsonDocs[0].selloRecibido); //SE CAMBIA EL ESTADO PARA NO CONTABILIZARLA NUEVAMENTE
                                 serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                             }
                             else
                             {
@@ -4010,7 +4040,8 @@ namespace Ws_OLS
                                                     jsonDocs[0].codigoGeneracion
                                                   ); //SE CAMBIA EL ESTADO DE LA FACTURA SI EL ENVIO ES EXITOSO
 
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Contigencia", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Contigencia", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                             respuestaOLS.mensajeCompleto = respuestaMetodo;
                             respuestaOLS.respuestaOlShttp = jsonDocs[0];
@@ -4057,7 +4088,8 @@ namespace Ws_OLS
                             }
 
                             serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Error", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Error", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                             respuestaOLS.mensajeCompleto = respuestaMetodo;
                             respuestaOLS.respuestaOlShttp = jsonDocs[0];
@@ -4447,7 +4479,8 @@ namespace Ws_OLS
                                               ); //SE CAMBIA EL ESTADO DE LA FACTURA SI EL ENVIO ES EXITOSO
 
                             serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                         }
                         else if (TipoDocEnvio == 2)
                         {
@@ -4458,7 +4491,8 @@ namespace Ws_OLS
                             facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
                             controlOLS.ActualizaEstadoNotaCredito(jsonDocs[0].numControl, jsonDocs[0].codigoGeneracion, jsonDocs[0].selloRecibido, NC_Only);
                             serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                             //controlOLS.CambiaEstadoNC(rutaTemp, fecha, facturaTemp, jsonDocs[0].selloRecibido, jsonDocs[0].selloRecibido, NC_Only); //SE CAMBIA EL ESTADO PARA NO CONTABILIZARLA NUEVAMENTE
                         }
                         else
@@ -4539,7 +4573,8 @@ namespace Ws_OLS
                                 respuestaOLS.ResultadoSatisfactorio = true;
 
                                 serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                                 respuestaMetodo = @"Documento ya existente,se actualizan datos!!!\n";
 
@@ -4559,7 +4594,8 @@ namespace Ws_OLS
                                 respuestaOLS.ResultadoSatisfactorio = true;
                                 controlOLS.CambiaEstadoNC(rutaTemp, fecha, facturaTemp, jsonDocs[0].selloRecibido); //SE CAMBIA EL ESTADO PARA NO CONTABILIZARLA NUEVAMENTE
                                 serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                             }
                             else
                             {
@@ -4594,7 +4630,8 @@ namespace Ws_OLS
                                                     jsonDocs[0].codigoGeneracion
                                                   ); //SE CAMBIA EL ESTADO DE LA FACTURA SI EL ENVIO ES EXITOSO
 
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Contigencia", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Contigencia", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                             respuestaOLS.mensajeCompleto = respuestaMetodo;
                             respuestaOLS.respuestaOlShttp = jsonDocs[0];
@@ -4641,7 +4678,8 @@ namespace Ws_OLS
                             }
 
                             serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Error", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Error", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                             respuestaOLS.mensajeCompleto = respuestaMetodo;
                             respuestaOLS.respuestaOlShttp = jsonDocs[0];
@@ -4788,7 +4826,8 @@ namespace Ws_OLS
 
                             serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
 
-                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-OK", jsonDocs[0].urlMail);
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                         }
 
                         facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
@@ -4839,7 +4878,8 @@ namespace Ws_OLS
 
                                 serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
 
-                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Repetido", jsonDocs[0].urlMail);
+                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
                             }
                         }
 
@@ -4908,7 +4948,8 @@ namespace Ws_OLS
 
                     serieTemp3 = (DatosRaw.Select(x => x.correlativoInterno).FirstOrDefault()).Split('_');
 
-                    controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Error", jsonDocs[0].urlMail);
+                    //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA, "Envio-Error", jsonDocs[0].urlMail);
+                    controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(serieTemp3[1]), facturaTemp, jsonFinal, jsonTotal, jsonDocs[0].msgHDA);
 
                     return respuestaOLS;
                 }
@@ -5130,10 +5171,11 @@ namespace Ws_OLS
                                 respuestaOLS1.ResultadoSatisfactorio = false;
 
                                 
-                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-Error", "NO URL");
+                                //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-Error", "NO URL");
+                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
 
 
-                        }
+                            }
                             else if(jsonDocs[0].status == 1)
                             {
                                 respuestaMetodo = @"Documento #" + fac_ruta[0] + "enviado!!!\n" +
@@ -5145,7 +5187,8 @@ namespace Ws_OLS
                                 respuestaOLS1.respuestaOlShttp = jsonDocs[0];
                                 respuestaOLS1.ResultadoSatisfactorio = true;
 
-                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-OK", "NO URL");
+                                //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-OK", "NO URL");
+                                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
                             }
 
                         
@@ -5198,7 +5241,8 @@ namespace Ws_OLS
                         respuestaOLS1.respuestaOlShttp = jsonDocs[0];
                         //respuestaOLS.res = jsonDocs[0];
 
-                        controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-ANULADO ANTES", "NO URL");
+                        //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-ANULADO ANTES", "NO URL");
+                        controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
 
                         return respuestaOLS1;
 
@@ -5221,7 +5265,8 @@ namespace Ws_OLS
                         respuestaOLS1.respuestaOlShttp = null;
                         //respuestaOLS.res = jsonDocs[0];
 
-                        controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-OK", "NO URL");
+                        //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-OK", "NO URL");
+                        controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
 
                         return respuestaOLS1;
                     }
@@ -5284,319 +5329,345 @@ namespace Ws_OLS
         /// <returns></returns>
         /// [WebMethod(Description ="Envia Anulacion de Documento")]
         ///
-        //[WebMethod(Description = "Envia Anulacion de Documento")]
-        //public RespuestaOLSAnulacion EnviaDataAnulacionSalaVentas(string fechaDoc, string correlativoInterno, int idTipo)
-        //{
-        //    Facturas _facturas = new Facturas();
-        //    string Token = "";
-        //    string revisaT = RevisarToken();
-        //    int numericStatusCode = 0;
-        //    if (revisaT == "0")
-        //    {
-        //        Token = GenerateTokenAsync(UrlToken, Usuario, Password, IdCompany, UsuarioHead, PasswordHead);
-        //    }
-        //    else
-        //    {
-        //        Token = revisaT;
-        //    }
+        [WebMethod(Description = "Envia Anulacion de Documento")]
+        public RespuestaOLSAnulacion EnviaDataAnulacionSalaVentas(string fechaDoc, string correlativoInterno, int idTipo)
+        {
+            Facturas _facturas = new Facturas();
+            string Token = "";
+            string revisaT = RevisarToken();
+            int numericStatusCode = 0;
+            if (revisaT == "0")
+            {
+                Token = GenerateTokenAsync(UrlToken, Usuario, Password, IdCompany, UsuarioHead, PasswordHead);
+            }
+            else
+            {
+                Token = revisaT;
+            }
 
-        //    //RespuestaAnulacion respuestaOLS = new RespuestaAnulacion();
-        //    RespuestaOLSAnulacion respuestaOLS1 = new RespuestaOLSAnulacion();
-        //    MapaAnulacion DatosRawAnulacion = new MapaAnulacion();
-        //    try
-        //    {
-        //        string[] fac_ruta;
-        //        string fechaAnu = "";
-        //        string revisarFEL = "";
-        //        string content = "";
+            //RespuestaAnulacion respuestaOLS = new RespuestaAnulacion();
+            RespuestaOLSAnulacion respuestaOLS1 = new RespuestaOLSAnulacion();
+            MapaAnulacion DatosRawAnulacion = new MapaAnulacion();
+            try
+            {
+                string[] fac_ruta;
+                string fechaAnu = "";
+                string revisarFEL = "";
+                string content = "";
 
-        //        int idSerieT = 0;
+                int idSerieT = 0;
 
-        //        if (idTipo == 1)
-        //        {
-        //            fechaAnu = fechaDoc;
-        //            fac_ruta = correlativoInterno.Split('|');
-        //            idSerieT = Convert.ToInt32(fac_ruta[3]);
-        //            string idMotivo = fac_ruta[2]; //empleado
-        //            string motivoDescripcion = _facturas.ObtieneMotivoAnulacion(Convert.ToInt32(idMotivo));
-        //            //MapaAnulacion DatosRawAnulacion=new MapaAnulacion();
-        //            DatosRawAnulacion.tipoDoc = _facturasSala.GetTipoDoc(Convert.ToInt32(fac_ruta[1]), fechaDoc, fac_ruta[0]) == "C" ? "CCF" : "FAC";
+                fechaAnu = fechaDoc;
+                fac_ruta = correlativoInterno.Split('|');
+                idSerieT = Convert.ToInt32(fac_ruta[3]);
+                string idMotivo = fac_ruta[2]; //empleado
+                string motivoDescripcion = _facturas.ObtieneMotivoAnulacion(Convert.ToInt32(idMotivo));
 
-        //            //if (DatosRawAnulacion.tipoDoc == "FAC")
-        //            //{
-        //            //    idSerieT = _facturas.GetIdSerie(Convert.ToInt32(fac_ruta[1]), "F", fechaAnu, fac_ruta[0]);
-        //            //}
-        //            //else
-        //            //{
-        //            //    idSerieT = _facturas.GetIdSerie(Convert.ToInt32(fac_ruta[1]), "C", fechaAnu, fac_ruta[0]);
-        //            //}
+                if (idTipo == 1)
+                {
+                   
+                    //MapaAnulacion DatosRawAnulacion=new MapaAnulacion();
+                    DatosRawAnulacion.tipoDoc = _facturasSala.GetTipoDoc(Convert.ToInt32(fac_ruta[1]), fechaDoc, fac_ruta[0]) == "C" ? "CCF" : "FAC";
 
-        //            DatosRawAnulacion.numDoc = 0;
-        //            DatosRawAnulacion.tipoDoc = _facturasSala.GetTipoDoc(Convert.ToInt32(fac_ruta[1]), fechaDoc, fac_ruta[0]) == "C" ? "CCF" : "FAC";
-        //            DatosRawAnulacion.codigoGeneracion = _facturasSala.GetCodigoGeneracion(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc == "FAC" ? "F" : "C", fechaAnu, fac_ruta[0]);
-        //            DatosRawAnulacion.nitEmisor = "0614-130571-001-2";
-        //            DatosRawAnulacion.correlativoInterno = "AV_" + idSerieT + "_" + fac_ruta[0];
-        //            DatosRawAnulacion.fechaDoc = fechaDoc;
-        //            DatosRawAnulacion.fechaAnulacion = DateTime.Now.Date.ToString("yyyy-MM-dd");
-        //            DatosRawAnulacion.codigoGeneracionR = "";
-        //            DatosRawAnulacion.nombreResponsable = "AVICOLA SALVADOREÑA";
-        //            DatosRawAnulacion.tipDocResponsable = "36";
-        //            DatosRawAnulacion.numDocResponsable = "06141305710012";
-        //            DatosRawAnulacion.nombreSolicita = "AVICOLA SALVADOREÑA";
-        //            DatosRawAnulacion.tipDocSolicita = "36";
-        //            DatosRawAnulacion.numDocSolicita = "06141305710012";
-        //            DatosRawAnulacion.tipoAnulacion = 2;
-        //            DatosRawAnulacion.motivoAnulacion = "Rescindir de la operación realizada";
-        //            revisarFEL = _facturasSala.GetCodigoSello(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc == "FAC" ? "F" : "C", fechaAnu, fac_ruta[0]);
-        //        }
-                
+                    //if (DatosRawAnulacion.tipoDoc == "FAC")
+                    //{
+                    //    idSerieT = _facturas.GetIdSerie(Convert.ToInt32(fac_ruta[1]), "F", fechaAnu, fac_ruta[0]);
+                    //}
+                    //else
+                    //{
+                    //    idSerieT = _facturas.GetIdSerie(Convert.ToInt32(fac_ruta[1]), "C", fechaAnu, fac_ruta[0]);
+                    //}
 
-        //        //CONVERSION A JSON Y ENVIO
-
-        //        string respuestaMetodo = "";
-        //        string jsonString = JsonConvert.SerializeObject(DatosRawAnulacion);
-        //        string jsonFinal = jsonString;
-        //        //string jsonFinal = jsonString.Substring(1, jsonString.Length - 2);
-
-        //        if (revisarFEL != "0" && revisarFEL != null)
-        //        {
-        //            RestClient cliente = new RestClient(UrlJsonAnulacion)
-        //            {
-        //                //Authenticator = new HttpBasicAuthenticator(Usuario, Password),
-        //                Timeout = 900000
-        //            };
-        //            RestRequest request = new RestRequest
-        //            {
-        //                Method = Method.POST
-        //            };
-        //            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-        //            request.Parameters.Clear();
-        //            request.AddHeader("Authorization", Token);
-        //            request.AddParameter("application/json", jsonFinal, ParameterType.RequestBody);
-        //            IRestResponse respond = cliente.Execute(request);
-        //            content = respond.Content;
-        //            HttpStatusCode httpStatusCode = respond.StatusCode;
-        //            numericStatusCode = (int)httpStatusCode;
-        //        }
-        //        else
-        //        {
-        //            numericStatusCode = 999;
-        //            string descripcion = "Documento anulado a las " + DateTime.Now.ToString();
-        //            //controlOLS.ActualizaHH_Anulacion(descripcion, "0-NO FEL", "0-NO FEL", Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-        //            //controlOLS.BorraReparto_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-        //            //controlOLS.BorraDevolucion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-        //            //controlOLS.InsertaAnulacion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], fac_ruta[2], idSerieT);
-        //            //controlOLS.BorraPagos_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-
-        //            respuestaMetodo = @"Documento #" + fac_ruta[0] + " fue anulado internamente!!!\n" +
-        //                              "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
-        //                              "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
-
-        //            respuestaOLS1.mensajeCompleto = respuestaMetodo;
-        //            respuestaOLS1.numeroDocumento = fac_ruta[1];
-        //            respuestaOLS1.respuestaOlShttp = null;
-        //            respuestaOLS1.ResultadoSatisfactorio = true;
+                    DatosRawAnulacion.numDoc = 0;
+                    DatosRawAnulacion.tipoDoc = _facturasSala.GetTipoDoc(Convert.ToInt32(fac_ruta[1]), fechaDoc, fac_ruta[0]) == "C" ? "CCF" : "FAC";
+                    DatosRawAnulacion.codigoGeneracion = _facturasSala.GetCodigoGeneracion(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc == "FAC" ? "F" : "C", fechaAnu, fac_ruta[0]);
+                    DatosRawAnulacion.nitEmisor = "0614-130571-001-2";
+                    DatosRawAnulacion.correlativoInterno = "AV_" + idSerieT + "_" + fac_ruta[0];
+                    DatosRawAnulacion.fechaDoc = fechaDoc;
+                    DatosRawAnulacion.fechaAnulacion = DateTime.Now.Date.ToString("yyyy-MM-dd");
+                    DatosRawAnulacion.codigoGeneracionR = "";
+                    DatosRawAnulacion.nombreResponsable = "AVICOLA SALVADOREÑA";
+                    DatosRawAnulacion.tipDocResponsable = "36";
+                    DatosRawAnulacion.numDocResponsable = "06141305710012";
+                    DatosRawAnulacion.nombreSolicita = "AVICOLA SALVADOREÑA";
+                    DatosRawAnulacion.tipDocSolicita = "36";
+                    DatosRawAnulacion.numDocSolicita = "06141305710012";
+                    DatosRawAnulacion.tipoAnulacion = 2;
+                    DatosRawAnulacion.motivoAnulacion = "Rescindir de la operación realizada";
+                    revisarFEL = _facturasSala.GetCodigoSello(Convert.ToInt32(fac_ruta[1]), DatosRawAnulacion.tipoDoc == "FAC" ? "F" : "C", fechaAnu, fac_ruta[0]);
+                }
 
 
-        //            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+                //CONVERSION A JSON Y ENVIO
 
-        //            return respuestaOLS1;
-        //        }
-        //        int rutaTemp = Convert.ToInt32(fac_ruta[1]);
-        //        string facturaTemp = DatosRawAnulacion.correlativoInterno;
+                string respuestaMetodo = "";
+                string jsonString = JsonConvert.SerializeObject(DatosRawAnulacion);
+                string jsonFinal = jsonString;
+                //string jsonFinal = jsonString.Substring(1, jsonString.Length - 2);
 
-        //        dynamic jsonRespuesta = JsonConvert.DeserializeObject(content);
-        //        string jsontt = jsonRespuesta.result;
-        //        //dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
-        //        //string resultJson = jsonRespuesta2.result;
-        //        dynamic resultObject = JsonConvert.DeserializeObject(jsontt);
+                if (revisarFEL != "0" && revisarFEL != null)
+                {
+                    RestClient cliente = new RestClient(UrlJsonAnulacion)
+                    {
+                        //Authenticator = new HttpBasicAuthenticator(Usuario, Password),
+                        Timeout = 900000
+                    };
+                    RestRequest request = new RestRequest
+                    {
+                        Method = Method.POST
+                    };
+                    System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    request.Parameters.Clear();
+                    request.AddHeader("Authorization", Token);
+                    request.AddParameter("application/json", jsonFinal, ParameterType.RequestBody);
+                    IRestResponse respond = cliente.Execute(request);
+                    content = respond.Content;
+                    HttpStatusCode httpStatusCode = respond.StatusCode;
+                    numericStatusCode = (int)httpStatusCode;
+                }
+                else
+                {
+                    numericStatusCode = 999;
+                    string descripcion = "Documento anulado a las " + DateTime.Now.ToString();
+                    //controlOLS.ActualizaHH_Anulacion(descripcion, "0-NO FEL", "0-NO FEL", Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
+                    //controlOLS.BorraReparto_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
+                    //controlOLS.BorraDevolucion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
+                    //controlOLS.InsertaAnulacion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], fac_ruta[2], idSerieT);
+                    //controlOLS.BorraPagos_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
 
-        //        string docs = resultObject.ToString();
-        //        string jsonTotal = @"[" + docs + "]";
-        //        List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
+                    respuestaMetodo = @"Documento #" + fac_ruta[0] + " fue anulado internamente!!!\n" +
+                                      "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
+                                      "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
 
-        //        if (numericStatusCode == 200) //REVISA SU CODIGO DE ESTADO, SI ES 200 NO HAY ERROR EN EL JSON
-        //        {
-        //            //JObject jsonObjectX = JObject.Parse(content);
-
-
-        //            if (jsonDocs[0].status == 1 || jsonDocs[0].status == 222) //SI EL MENSAJE ES OK, EL JSON LLEGO A OLS
-        //            {
-        //                //string facturaTemp = DatosRawAnulacion.correlativoInterno;
-
-
-        //                if (jsonDocs[0].status == 222)
-        //                {
-        //                    jsonDocs[0].selloRecibido = "0";
-        //                }
-
-
-        //                if (idTipo == 1 && jsonDocs[0].status == 1)
-        //                {
-        //                    string descripcion = "Documento anulado a las " + DateTime.Now.ToString();
-        //                    controlOLS.ActualizaHH_Anulacion(descripcion, jsonDocs[0].selloRecibido, jsonDocs[0].codigoGeneracion, Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-        //                    controlOLS.BorraReparto_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-        //                    controlOLS.BorraDevolucion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-        //                    controlOLS.InsertaAnulacion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], fac_ruta[2], idSerieT);
-        //                    controlOLS.BorraPagos_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
-        //                }
-
-        //                if (jsonDocs[0].status == 222)
-        //                {
-        //                    respuestaMetodo = @"Documento #" + fac_ruta[0] + " no fue enviado!!!\n" +
-        //                           "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
-        //                           "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
-
-        //                    respuestaOLS1.mensajeCompleto = respuestaMetodo;
-        //                    respuestaOLS1.numeroDocumento = facturaTemp;
-        //                    respuestaOLS1.respuestaOlShttp = jsonDocs[0];
-        //                    respuestaOLS1.ResultadoSatisfactorio = false;
+                    respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                    respuestaOLS1.numeroDocumento = fac_ruta[1];
+                    respuestaOLS1.respuestaOlShttp = null;
+                    respuestaOLS1.ResultadoSatisfactorio = true;
 
 
-        //                    controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+                    //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+
+                    return respuestaOLS1;
+                }
+                int rutaTemp = Convert.ToInt32(fac_ruta[1]);
+                string facturaTemp = DatosRawAnulacion.correlativoInterno;
+
+                dynamic jsonRespuesta = JsonConvert.DeserializeObject(content);
+                string jsontt = jsonRespuesta.result;
+                //dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
+                //string resultJson = jsonRespuesta2.result;
+                dynamic resultObject = JsonConvert.DeserializeObject(jsontt);
+
+                string docs = resultObject.ToString();
+                string jsonTotal = @"[" + docs + "]";
+                List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
+
+                if (numericStatusCode == 200) //REVISA SU CODIGO DE ESTADO, SI ES 200 NO HAY ERROR EN EL JSON
+                {
+                    //JObject jsonObjectX = JObject.Parse(content);
 
 
-        //                }
-        //                else if (jsonDocs[0].status == 1)
-        //                {
-        //                    respuestaMetodo = @"Documento #" + fac_ruta[0] + "enviado!!!\n" +
-        //                           "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
-        //                           "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
-
-        //                    respuestaOLS1.mensajeCompleto = respuestaMetodo;
-        //                    respuestaOLS1.numeroDocumento = facturaTemp;
-        //                    respuestaOLS1.respuestaOlShttp = jsonDocs[0];
-        //                    respuestaOLS1.ResultadoSatisfactorio = true;
-
-        //                    controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
-        //                }
+                    if (jsonDocs[0].status == 1 || jsonDocs[0].status == 222) //SI EL MENSAJE ES OK, EL JSON LLEGO A OLS
+                    {
+                        //string facturaTemp = DatosRawAnulacion.correlativoInterno;
 
 
-        //                //respuestaOLS.res = jsonDocs[0];
+                        if (jsonDocs[0].status == 222)
+                        {
+                            jsonDocs[0].selloRecibido = "0";
+                        }
 
-        //                return respuestaOLS1;
-        //            }
-        //            else
-        //            {
-        //                //string facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
-        //                //int rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
-        //                //string resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
-        //                //string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
-        //                //dynamic jsonRespuesta = JsonConvert.DeserializeObject(content);
-        //                //dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
-        //                //string resultJson = jsonRespuesta2.result;
-        //                //dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
+                        if (idTipo == 1 && jsonDocs[0].status == 1)
+                        {
+                            string descripcion = "Documento anulado a las " + DateTime.Now.ToString();
+                            controlOLS.Actualiza_AnulacionSalaVenta(fechaAnu, descripcion, jsonDocs[0].selloRecibido, jsonDocs[0].codigoGeneracion, Convert.ToInt32(fac_ruta[1]), fac_ruta[0]);
+                            //controlOLS.BorraReparto_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
+                            //controlOLS.BorraDevolucion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
+                            //controlOLS.InsertaAnulacion_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], fac_ruta[2], idSerieT);
+                            //controlOLS.BorraPagos_Anulacion(Convert.ToInt32(fac_ruta[1]), fac_ruta[0], idSerieT);
+                        }
 
-        //                //string docs = resultObject.ToString();
-        //                //string jsonTotal = @"[" + docs + "]";
-        //                //List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
+                        if (jsonDocs[0].status == 222 && !jsonDocs[0].statusMsg.Contains("INVALIDADO"))
+                        {
+                            respuestaMetodo = @"Documento #" + fac_ruta[0] + " no fue enviado!!!\n" +
+                                   "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
+                                   "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
 
-        //                anulacion = 0;
+                            respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                            respuestaOLS1.numeroDocumento = facturaTemp;
+                            respuestaOLS1.respuestaOlShttp = jsonDocs[0];
+                            respuestaOLS1.ResultadoSatisfactorio = false;
 
-        //                if (jsonDocs[0].statusMsg.Contains("DOCUMENTO SE ENCUENTA ANULADO"))
-        //                {
-        //                }
-        //                //controlOLS.RecLogBitacora(
-        //                //						0,
-        //                //						"ANU",
-        //                //						Convert.ToInt32(facturaTemp),
-        //                //						resolucionTemp,
-        //                //						serieTemp,
-        //                //						jsonDocs[0].result + " en la ruta: " + rutaTemp,
-        //                //						numericStatusCode
-        //                //					  ); //SE REGISTRA ERROR EN LA BITACORA
-        //                //return respuestaMetodo = @"Documento #" + facturaTemp + "no fue enviado!!!\n" +
-        //                //                "Tipo documento: ANU\n" +
-        //                //                "Error:" + jsonDocs[0].result + "\n" +
-        //                //                "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
 
-        //                respuestaMetodo = @"Documento #" + fac_ruta[0] + " ya anulado!!!\n" +
-        //                               "Tipo documento: F " +
-        //                               "Error:" + jsonDocs[0].statusMsg + "\n" +
-        //                               "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-Error", "NO URL");
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
 
-        //                respuestaOLS1.mensajeCompleto = respuestaMetodo;
-        //                respuestaOLS1.numeroDocumento = fac_ruta[0];
-        //                respuestaOLS1.respuestaOlShttp = jsonDocs[0];
-        //                //respuestaOLS.res = jsonDocs[0];
 
-        //                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+                        }
+                        else if (jsonDocs[0].status == 222 && jsonDocs[0].statusMsg.Contains("INVALIDADO"))
+                        {
+                            string descripcion = "Documento anulado a las " + DateTime.Now.ToString();
+                            respuestaMetodo = @"Documento #" + fac_ruta[0] + " fue enviado!!!\n" +
+                                              "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
+                                              "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
 
-        //                return respuestaOLS1;
+                            controlOLS.Actualiza_AnulacionSalaVenta(fechaAnu, descripcion, jsonDocs[0].selloRecibido, jsonDocs[0].codigoGeneracion, Convert.ToInt32(fac_ruta[1]), fac_ruta[0]);
 
-        //                //respuestaOLS.mensajeCompleto = respuestaMetodo;
-        //                //respuestaOLS.respuestaOlShttp = jsonDocs[0];
-        //                //respuestaOLS.numeroDocumento = fac_ruta[0];
-        //                //respuestaOLS.ResultadoSatisfactorio = true;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            if (numericStatusCode == 999)
-        //            {
-        //                respuestaMetodo = @"Documento #" + fac_ruta[0] + "enviado!!!\n" +
-        //                              "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
-        //                              "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+                            respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                            respuestaOLS1.numeroDocumento = facturaTemp;
+                            respuestaOLS1.respuestaOlShttp = jsonDocs[0];
+                            respuestaOLS1.ResultadoSatisfactorio = true;
 
-        //                respuestaOLS1.mensajeCompleto = respuestaMetodo;
-        //                respuestaOLS1.numeroDocumento = fac_ruta[0];
-        //                respuestaOLS1.respuestaOlShttp = null;
-        //                //respuestaOLS.res = jsonDocs[0];
 
-        //                controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-Error", "NO URL");
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
 
-        //                return respuestaOLS1;
-        //            }
 
-        //            //dynamic jsonRespuesta = JsonConvert.DeserializeObject(content);
-        //            //dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
-        //            //string resultJson = jsonRespuesta2.result;
-        //            //dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
+                        }
+                        else if (jsonDocs[0].status == 1)
+                        {
+                            respuestaMetodo = @"Documento #" + fac_ruta[0] + "enviado!!!\n" +
+                                   "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
+                                   "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
 
-        //            //string docs = resultObject.ToString();
-        //            //string jsonTotal = @"[" + docs + "]";
-        //            //List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
-        //            //controlOLS.RecLogBitacora(
-        //            //							0,
-        //            //							"ANU",
-        //            //							Convert.ToInt32(facturaTemp),
-        //            //							resolucionTemp,
-        //            //							serieTemp,
-        //            //							"BAD REQUEST: Debido a Gateway time o Error de Sintaxis en la ruta: " + DatosRaw.Select(x => x.cajaSuc).ToString(),
-        //            //							numericStatusCode
-        //            //						  ); //SE REGISTRA ERROR EN LA BITACORA
-        //            //return respuestaMetodo = @"Documento #" + DatosRaw.Select(x => x.numFactura).ToString() + "no fue anulado!!!\n" +
-        //            //                        "Tipo documento: FAC/ANU\n" +
-        //            //                        "Error:BAD REQUEST: Debido a Gateway time o Error de Sintaxis\n" +
-        //            //                        "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+                            respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                            respuestaOLS1.numeroDocumento = facturaTemp;
+                            respuestaOLS1.respuestaOlShttp = jsonDocs[0];
+                            respuestaOLS1.ResultadoSatisfactorio = true;
 
-        //            respuestaMetodo = @"Documento #" + fac_ruta[0] + "no fue ANULADO!!!\n" +
-        //                              "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
-        //                              "Error:" + jsonDocs[0].statusMsg + "\n" +
-        //                              "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+                            //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg,"Envio-OK", "NO URL");
+                            controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+                        }
 
-        //            respuestaOLS1.mensajeCompleto = respuestaMetodo;
-        //            respuestaOLS1.numeroDocumento = fac_ruta[0];
-        //            respuestaOLS1.respuestaOlShttp = null;
 
-        //            return respuestaOLS1;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        StackTrace s = new StackTrace(ex);
-        //        Assembly thisasm = Assembly.GetExecutingAssembly();
-        //        string methodname = s.GetFrames().Select(f => f.GetMethod()).First(m => m.Module.Assembly == thisasm).Name;
-        //        respuestaOLS1.mensajeCompleto = @"Error interno:" + ex.Message.ToString() + "\n" +
-        //                 "Metodo:" + s.GetFrames().Select(f => f.GetMethod()).First(m => m.Module.Assembly == thisasm).Name;
+                        //respuestaOLS.res = jsonDocs[0];
 
-        //        respuestaOLS1.numeroDocumento = "0";
-        //        //respuestaOLS1.ResultadoSatisfactorio = false;
+                        return respuestaOLS1;
+                    }
+                    else
+                    {
+                        //string facturaTemp = DatosRaw.Select(x => x.numFactura).FirstOrDefault();
+                        //int rutaTemp = Convert.ToInt32(DatosRaw.Select(x => x.cajaSuc).FirstOrDefault());
+                        //string resolucionTemp = DatosRaw.Select(x => x.resolucion).FirstOrDefault();
+                        //string serieTemp = DatosRaw.Select(x => x.serie).FirstOrDefault();
 
-        //        return respuestaOLS1;
-        //    }
-        //}
+                        //dynamic jsonRespuesta = JsonConvert.DeserializeObject(content);
+                        //dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
+                        //string resultJson = jsonRespuesta2.result;
+                        //dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
+
+                        //string docs = resultObject.ToString();
+                        //string jsonTotal = @"[" + docs + "]";
+                        //List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
+
+                        anulacion = 0;
+
+                        if (jsonDocs[0].statusMsg.Contains("DOCUMENTO SE ENCUENTA ANULADO"))
+                        {
+                        }
+                        //controlOLS.RecLogBitacora(
+                        //						0,
+                        //						"ANU",
+                        //						Convert.ToInt32(facturaTemp),
+                        //						resolucionTemp,
+                        //						serieTemp,
+                        //						jsonDocs[0].result + " en la ruta: " + rutaTemp,
+                        //						numericStatusCode
+                        //					  ); //SE REGISTRA ERROR EN LA BITACORA
+                        //return respuestaMetodo = @"Documento #" + facturaTemp + "no fue enviado!!!\n" +
+                        //                "Tipo documento: ANU\n" +
+                        //                "Error:" + jsonDocs[0].result + "\n" +
+                        //                "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+
+                        respuestaMetodo = @"Documento #" + fac_ruta[0] + " ya anulado!!!\n" +
+                                       "Tipo documento: F " +
+                                       "Error:" + jsonDocs[0].statusMsg + "\n" +
+                                       "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+
+                        respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                        respuestaOLS1.numeroDocumento = fac_ruta[0];
+                        respuestaOLS1.respuestaOlShttp = jsonDocs[0];
+                        //respuestaOLS.res = jsonDocs[0];
+
+                        //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg,"Envio-OK", "NO URL");
+                        controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+
+                        return respuestaOLS1;
+
+                        //respuestaOLS.mensajeCompleto = respuestaMetodo;
+                        //respuestaOLS.respuestaOlShttp = jsonDocs[0];
+                        //respuestaOLS.numeroDocumento = fac_ruta[0];
+                        //respuestaOLS.ResultadoSatisfactorio = true;
+                    }
+                }
+                else
+                {
+                    if (numericStatusCode == 999)
+                    {
+                        respuestaMetodo = @"Documento #" + fac_ruta[0] + "enviado!!!\n" +
+                                      "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
+                                      "Enviado a las:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+
+                        respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                        respuestaOLS1.numeroDocumento = fac_ruta[0];
+                        respuestaOLS1.respuestaOlShttp = null;
+                        //respuestaOLS.res = jsonDocs[0];
+
+                        //controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg, "Envio-OK", "NO URL");
+                        controlOLS.RecLogBitacoraFEL(rutaTemp, Convert.ToInt32(idSerieT), facturaTemp.Split('|')[0], jsonFinal, jsonTotal, jsonDocs[0].statusMsg);
+
+                        return respuestaOLS1;
+                    }
+
+                    //dynamic jsonRespuesta = JsonConvert.DeserializeObject(content);
+                    //dynamic jsonRespuesta2 = JsonConvert.DeserializeObject(jsonRespuesta);
+                    //string resultJson = jsonRespuesta2.result;
+                    //dynamic resultObject = JsonConvert.DeserializeObject(resultJson);
+
+                    //string docs = resultObject.ToString();
+                    //string jsonTotal = @"[" + docs + "]";
+                    //List<RespuestaAnulacion> jsonDocs = JsonConvert.DeserializeObject<List<RespuestaAnulacion>>(jsonTotal);
+                    //controlOLS.RecLogBitacora(
+                    //							0,
+                    //							"ANU",
+                    //							Convert.ToInt32(facturaTemp),
+                    //							resolucionTemp,
+                    //							serieTemp,
+                    //							"BAD REQUEST: Debido a Gateway time o Error de Sintaxis en la ruta: " + DatosRaw.Select(x => x.cajaSuc).ToString(),
+                    //							numericStatusCode
+                    //						  ); //SE REGISTRA ERROR EN LA BITACORA
+                    //return respuestaMetodo = @"Documento #" + DatosRaw.Select(x => x.numFactura).ToString() + "no fue anulado!!!\n" +
+                    //                        "Tipo documento: FAC/ANU\n" +
+                    //                        "Error:BAD REQUEST: Debido a Gateway time o Error de Sintaxis\n" +
+                    //                        "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+
+                    respuestaMetodo = @"Documento #" + fac_ruta[0] + "no fue ANULADO!!!\n" +
+                                      "Tipo documento: " + DatosRawAnulacion.tipoDoc + " " +
+                                      "Error:" + jsonDocs[0].statusMsg + "\n" +
+                                      "Error generado:" + DateTime.Now.Hour + " horas y " + DateTime.Now.Minute + " minutos!!";
+
+                    respuestaOLS1.mensajeCompleto = respuestaMetodo;
+                    respuestaOLS1.numeroDocumento = fac_ruta[0];
+                    respuestaOLS1.respuestaOlShttp = null;
+
+                    return respuestaOLS1;
+                }
+            }
+            catch (Exception ex)
+            {
+                StackTrace s = new StackTrace(ex);
+                Assembly thisasm = Assembly.GetExecutingAssembly();
+                string methodname = s.GetFrames().Select(f => f.GetMethod()).First(m => m.Module.Assembly == thisasm).Name;
+                respuestaOLS1.mensajeCompleto = @"Error interno:" + ex.Message.ToString() + "\n" +
+                         "Metodo:" + s.GetFrames().Select(f => f.GetMethod()).First(m => m.Module.Assembly == thisasm).Name;
+
+                respuestaOLS1.numeroDocumento = "0";
+                //respuestaOLS1.ResultadoSatisfactorio = false;
+
+                return respuestaOLS1;
+            }
+        }
 
         /// <summary>
         /// GRABA LOS ERRORES INTERNOS EN LA BITACORA
