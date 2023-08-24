@@ -230,7 +230,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT ISNULL((SELECT Token 
+                string sqlQuery = @"SELECT ISNULL((SELECT TOP 1 Token 
                                     FROM Facturacion.TokenFEL 
                                     WHERE CAST(Fecha AS DATE) =@Fecha), 0) Token";
 
@@ -1951,7 +1951,8 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 //string sqlQuery = @"SELECT (PrecioUnitario + DescuentoPorPrecio)
-                string sqlQuery = @"SELECT FORMAT((PrecioSinImpuesto + Descuento),'N4', 'es-GT')
+                //string sqlQuery = @"SELECT FORMAT((PrecioSinImpuesto + Descuento),'N4', 'es-GT')
+                string sqlQuery = @"SELECT FORMAT((PrecioSinImpuesto),'N4', 'es-GT')
                                     FROM Facturacion.FacturaD
                                     WHERE idFactura=@numero AND idProductos=@producto";
 

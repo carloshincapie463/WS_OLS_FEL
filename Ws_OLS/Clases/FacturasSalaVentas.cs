@@ -816,7 +816,7 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"SELECT DirMunicipio
+                string sqlQuery = @"SELECT RIGHT(DirMunicipio, 2) as CodigoMunicipio
                                     FROM sap.Clientes
                                     WHERE IdCliente=@idCliente";
 

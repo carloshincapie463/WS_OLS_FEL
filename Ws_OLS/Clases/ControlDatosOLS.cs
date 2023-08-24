@@ -7,8 +7,8 @@ namespace Ws_OLS.Clases
     public class ControlDatosOLS
     {
         //CADENA DE CONEXION
-        private string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
-        private string connectionStringSV = ConfigurationManager.ConnectionStrings["IPES_Sala"].ConnectionString;
+        private readonly string connectionString = ConfigurationManager.ConnectionStrings["IPES"].ConnectionString;
+        private readonly string connectionStringSV = ConfigurationManager.ConnectionStrings["IPES_Sala"].ConnectionString;
 
         //string connectionStringH = ConfigurationManager.ConnectionStrings["IPESH"].ConnectionString;
 
@@ -155,7 +155,7 @@ namespace Ws_OLS.Clases
             }
         }
 
-        public void CambiaEstadoSello_SalaVenta(int ruta, string FC, string fecha, string numero, string sello)
+        public void CambiaEstadoSello_SalaVenta(int ruta, string FC, string fecha, string numero, string sello, string generacion, string control)
         {
             using (SqlConnection cnn = new SqlConnection(connectionStringSV))
             {
@@ -164,7 +164,7 @@ namespace Ws_OLS.Clases
                 //                                FROM Facturacion.Series
                 //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
                 string sqlQuery = @"UPDATE PosIP.FacturaE
-									SET FELSello=@sello
+									SET FELSello=@sello, FELCodigoGeneracion=@generacion, FELNumeroControl=@control
                                     WHERE CAST(FechaHora  AS DATE)=@fecha
 									AND Correlativo =@numero AND TipoDoc=@FC AND IdSucursal=@ruta";
 
@@ -175,6 +175,8 @@ namespace Ws_OLS.Clases
                     cmd.Parameters.AddWithValue("@FC", FC);
                     cmd.Parameters.AddWithValue("@numero", numero);
                     cmd.Parameters.AddWithValue("@sello", sello);
+                    cmd.Parameters.AddWithValue("@generacion", generacion);
+                    cmd.Parameters.AddWithValue("@control", control);
                     cmd.ExecuteNonQuery();
                     //dsSumario.Tables.Add(dt);
                 }
@@ -360,7 +362,7 @@ namespace Ws_OLS.Clases
         }
 
         //INGRESA DATO EN BITACORA FEL NUEVA
-        public void RecLogBitacoraFEL(int idRuta, int idSerie, string NumDoc, string jsonGenerado, string jsonResultante, string MensajeOLS)
+        public void RecLogBitacoraFEL(int idRuta, int idSerie, string NumDoc, string jsonGenerado, string jsonResultante, string MensajeOLS, string accion, string URL)
         {
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
@@ -372,8 +374,8 @@ namespace Ws_OLS.Clases
                 //string sqlQuery = @"SELECT idSerie
                 //                                FROM Facturacion.Series
                 //                                WHERE idRuta=@ruta AND CAST(FechaIngreso AS DATE)=@fecha AND idTipoSerie=@idTipo ";
-                string sqlQuery = @"INSERT INTO vendemas.logFEL
-									VALUES(@idRuta, @idSerie, @NumDoc, @jsonGenerado, @jsonResultante, @MensajeOLS)";
+                string sqlQuery = @"INSERT INTO vendemas.logFEL (idRuta,IdSerie,numero,jsonGenerado,jsonDevuelto,MensajeOLS, accion, FechaHora, URL)
+									VALUES(@idRuta, @idSerie, @NumDoc, @jsonGenerado, @jsonResultante, @MensajeOLS, @accion, GETDATE(), @URL)";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -391,6 +393,8 @@ namespace Ws_OLS.Clases
                     cmd.Parameters.AddWithValue("@jsonGenerado", jsonGenerado);
                     cmd.Parameters.AddWithValue("@jsonResultante", jsonResultante);
                     cmd.Parameters.AddWithValue("@MensajeOLS", MensajeOLS);
+                    cmd.Parameters.AddWithValue("@accion", accion);
+                    cmd.Parameters.AddWithValue("@URL", URL);
                     cmd.ExecuteNonQuery();
                     //dsSumario.Tables.Add(dt);
                 }
@@ -433,9 +437,9 @@ namespace Ws_OLS.Clases
             }
         }
 
-        public void Actualiza_AnulacionSalaVenta(string fecha, string descripcion, string serie, string Numero, int ruta, string idNumero)
+        public void Actualiza_AnulacionSalaVenta(string fecha, string descripcion, string sello, string generacion, int ruta, string idNumero)
         {
-            using (SqlConnection cnn = new SqlConnection(connectionString))
+            using (SqlConnection cnn = new SqlConnection(connectionStringSV))
             {
                 DateTime fechaActual = new DateTime();
                 fechaActual = DateTime.Now;
@@ -451,11 +455,11 @@ namespace Ws_OLS.Clases
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
                     cmd.Parameters.AddWithValue("@Fel_Descripcion", descripcion);
-                    cmd.Parameters.AddWithValue("@FelAnulacionNumero", Numero);
-                    cmd.Parameters.AddWithValue("@FEL_AnulacionSerie", serie);
+                    cmd.Parameters.AddWithValue("@FelAnulacionNumero", generacion);
+                    cmd.Parameters.AddWithValue("@FEL_AnulacionSerie", sello);
                     cmd.Parameters.AddWithValue("@idruta", ruta);
                     cmd.Parameters.AddWithValue("@numero", idNumero);
-                    cmd.Parameters.AddWithValue("@fecha", idNumero);
+                    cmd.Parameters.AddWithValue("@fecha", fecha);
                     //cmd.Parameters.AddWithValue("@serieID", serieID);
                     cmd.ExecuteNonQuery();
                     //dsSumario.Tables.Add(dt);
