@@ -452,7 +452,7 @@ namespace Ws_OLS.Clases
                                     FROM Facturacion.FacturaE FF
                                     INNER JOIN Liquidaciones.FacturasE LE ON CONVERT(BIGINT,FF.FACTURA)=CONVERT(BIGINT,LE.FACTURA)
                                     INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura
-                                    AND FF.idCliente=LE.idCliente
+                                    AND FF.idCliente=LE.idClienteDestinatario
                                     AND LE.idRutaReparto=FF.idRutaReparto
                                     AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idFactura";
 

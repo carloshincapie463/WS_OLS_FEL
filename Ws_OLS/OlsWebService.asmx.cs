@@ -945,6 +945,9 @@ namespace Ws_OLS
                     maindata.bienTitulo = "0";
                     maindata.tipoDocumentoReceptor = tipoDocTempNIT;
 
+                    //CALLEJAS
+                    maindata.campoExtFE = "";
+
                     //maindata.mostrarTributo = false;
                     //maindata.bienTitulo = "0";
                     //maindata.tipoDocumentoReceptor = tipoDocTempNIT;
@@ -2185,7 +2188,8 @@ namespace Ws_OLS
                         string percepcion = row["Percepcion"].ToString();
                         if (!string.IsNullOrEmpty(percepcion))
                         {
-                            maindata.ventaTotal = Convert.ToDouble(row["TotalFactura"].ToString()) - Convert.ToDouble(row["Percepcion"].ToString());
+                            maindata.ventaTotal = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"].ToString()) -
+                                                                   Convert.ToDecimal(row["Percepcion"].ToString()));
                         }
                         else
                         {
@@ -2224,7 +2228,7 @@ namespace Ws_OLS
 
                     if (FC_tipo == "F")
                     {
-                        maindata.sumas = Convert.ToDouble(row["TotalFactura"].ToString());
+                        maindata.sumas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"].ToString()) + Convert.ToDecimal(row["ValeMerma"]));
                     }
                     else
                     {
@@ -2250,7 +2254,7 @@ namespace Ws_OLS
                         string percepcion = row["Percepcion"].ToString();
                         if (!string.IsNullOrEmpty(percepcion))
                         {
-                            maindata.subTotalVentasGravadas = Convert.ToDouble(row["TotalFactura"]) - Convert.ToDouble(row["Percepcion"]);
+                            maindata.subTotalVentasGravadas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"]) - Convert.ToDecimal(row["Percepcion"]));
                         }
                         else
                         {
@@ -2261,7 +2265,8 @@ namespace Ws_OLS
                     }
                     else
                     {
-                        maindata.subTotalVentasGravadas = 0;
+                        //maindata.subTotalVentasGravadas = 0;
+                        maindata.subTotalVentasGravadas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"].ToString()) + Convert.ToDecimal(row["ValeMerma"]));
                     }
 
                     if (FC_tipo == "F")
@@ -2292,13 +2297,13 @@ namespace Ws_OLS
                     }
                     else
                     { //SI ES FACTYRA
-                        maindata.ventasGravadas = Convert.ToDouble(row["TotalFactura"].ToString());
+                        maindata.ventasGravadas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"].ToString())+ Convert.ToDecimal(row["ValeMerma"]));
                     }
 
                     maindata.ventasExentas = 0;
                     maindata.ventasNoSujetas = 0;
                     maindata.totalExportaciones = 0;
-                    maindata.descuentos = 0;
+                    maindata.descuentos = Convert.ToDouble(row["ValeMerma"]);
                     maindata.abonos = 0;
                     maindata.cantidadTotal = _facturas.GetCantidadTotalPreImpresa(row["idFactura"].ToString());
                     maindata.ventasGravadas13 = 0;
@@ -2396,7 +2401,7 @@ namespace Ws_OLS
                     maindata.ventCterNombre = "";
                     maindata.montGDescVentNoSujetas = 0.0;
                     maindata.montGDescVentExentas = 0.0;
-                    maindata.montGDescVentGrav = 0.0;
+                    maindata.montGDescVentGrav = Convert.ToDouble(row["ValeMerma"]);
                     maindata.totOtroMonNoAfec = 0.0;
                     maindata.totalAPagar = Convert.ToDouble(row["TotalFactura"].ToString());
                     maindata.responsableEmisor = "";
@@ -2477,7 +2482,8 @@ namespace Ws_OLS
                             detalleOLS.Add(
                                 new Detalle
                                 {
-                                    descripcion = rowDeta["idProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["idProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["idProductos"].ToString(), row["idCliente"].ToString()) + "|",
+                                    //descripcion = rowDeta["idProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["idProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["idProductos"].ToString(), row["idCliente"].ToString()) + "|",
+                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + rowDeta["IdProductos"].ToString() + "|" + _facturas.GetUnidadesDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) + " UN"+ "|" + _facturas.GetPesoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString())+ " LB"+"|",
                                     codTributo = "",
                                     tributos = new List<string>() { "20" },
                                     precioUnitario = _facturas.GetPrecioUnitarioDetallePreImpresaCCF(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
@@ -2499,6 +2505,7 @@ namespace Ws_OLS
                                     ivaRetenido = 0.0,
                                     //desc = _facturas.GetDescuentoPrecioDetallePreImpresa(row["idFactura"].ToString(), rowDeta["IdProductos"].ToString()),
                                     desc = "0.0",
+                                    //descuentoItem = Convert.ToDouble(_facturas.GetValeMermaPrecioDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString())),
                                     descuentoItem = 0.0,
                                     otroMonNoAfec = 0.0
                                 });
@@ -2534,8 +2541,8 @@ namespace Ws_OLS
                                     //delAl = "",
                                     //exportaciones = "0.0"
 
-                                    descripcion = rowDeta["idProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["idProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["idProductos"].ToString(), row["idCliente"].ToString()) + "|",
-                                    codTributo = null,
+                                    //descripcion = rowDeta["idProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["idProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["idProductos"].ToString(), row["idCliente"].ToString()) + "|",
+                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + rowDeta["IdProductos"].ToString() + "|" + _facturas.GetUnidadesDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) + " UN"+ "|" + _facturas.GetPesoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) +" LB"+ "|",
                                     tributos = null,
                                     precioUnitario = _facturas.GetPrecioUnitarioDetalleFACPreImpreso(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
                                     ventasNoSujetas = 0,
@@ -2556,6 +2563,7 @@ namespace Ws_OLS
                                     ivaRetenido = 0.0,
                                     //desc = _facturas.GetDescuentoPrecioDetallePreImpresa(row["idFactura"].ToString(), rowDeta["IdProductos"].ToString()),
                                     desc = "0.0",
+                                    //descuentoItem = Convert.ToDouble(_facturas.GetValeMermaPrecioDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString())),
                                     descuentoItem = 0.0,
                                     otroMonNoAfec = 0.0
                                 }); ;
@@ -2631,6 +2639,9 @@ namespace Ws_OLS
 
             anulacion = 0;
             return respuestaOLS;
+
+            //crea respuesta
+
         }
 
         /// <summary>
@@ -2740,7 +2751,8 @@ namespace Ws_OLS
                     //maindata.giro = _facturas.GetGiroNegocio(maindata.codigoCliente).Trim();
                     maindata.codicionPago = "";
                     //maindata.ventaTotal = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
-                    maindata.ventaTotal = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
+
+                    maindata.ventaTotal = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
                     maindata.montoLetras = _facturas.GetMontoLetras(maindata.ventaTotal).Trim();
                     maindata.CCFAnterior = _nCreditos.GetCCFAnteriorNC(row["ZNROCF"].ToString()); //123
                     maindata.vtaACuentaDe = "";
@@ -2762,7 +2774,7 @@ namespace Ws_OLS
                     maindata.sumas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
                     maindata.subTotalVentasExentas = 0;
                     maindata.subTotalVentasNoSujetas = 0;
-                    maindata.subTotalVentasGravadas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
+                    maindata.subTotalVentasGravadas = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
                     maindata.iva = Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
                     maindata.renta = 0;
                     maindata.impuesto = Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
@@ -2778,7 +2790,7 @@ namespace Ws_OLS
                     maindata.ventasGravadas0 = 0;
                     maindata.ventasNoGravadas = 0;
                     //maindata.ivaPercibido1 = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
-                    maindata.ivaPercibido1 = 0.0;
+                    maindata.ivaPercibido1 = Convert.ToDouble(_nCreditos.GetPercepcionNc(row["ZNROCF"].ToString()));
                     //maindata.ivaPercibido1 = Convert.ToDouble(_nCreditos.GetTotalNc(row["ZNROCF"].ToString()));
                     maindata.ivaPercibido2 = 0;
                     string percepcion = _nCreditos.GetPercepcionNc(row["ZNROCF"].ToString());
@@ -2829,7 +2841,7 @@ namespace Ws_OLS
                     maindata.montGDescVentExentas = 0.0;
                     maindata.montGDescVentGrav = 0.0;
                     maindata.totOtroMonNoAfec = 0.0;
-                    maindata.totalAPagar = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
+                    maindata.totalAPagar = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
                     //maindata.totalAPagar = Convert.ToDouble(_nCreditos.GetTotalNc(row["ZNROCF"].ToString()));
                     maindata.responsableEmisor = "";
                     maindata.numDocEmisor = "";
