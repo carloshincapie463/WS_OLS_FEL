@@ -884,6 +884,8 @@ namespace Ws_OLS
                     {
                         maindata.campo2 = maindata.campo2 + _facturas.GetSecuencia(row["NumeroPedido"].ToString());
                     }
+                    
+                    maindata.campo2 = maindata.campo2 + "OC:"+_facturas.GetOrdenCompraHH(row["NumeroPedido"].ToString());
                     maindata.campo3 = "";
                     maindata.campo4 = "||||";
 
@@ -946,7 +948,7 @@ namespace Ws_OLS
                     maindata.tipoDocumentoReceptor = tipoDocTempNIT;
 
                     //CALLEJAS
-                    maindata.campoExtFE = "";
+                    maindata.campoExtFE = "OrdenCompra|Número de Orden de Compra|" + _facturas.GetOrdenCompraHH(row["NumeroPedido"].ToString())+"|||";
 
                     //maindata.mostrarTributo = false;
                     //maindata.bienTitulo = "0";
@@ -1005,7 +1007,7 @@ namespace Ws_OLS
                                 new Detalle
                                 {
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
-                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + rowDeta["IdProductos"].ToString() + "|" + Convert.ToDouble(rowDeta["Unidades"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
+                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + Convert.ToDouble(rowDeta["Unidades"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
                                     codTributo = null,
                                     tributos = new List<string>() { "20" },
                                     //precioUnitario = _facturas.GetPrecioUnitarioDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
@@ -1067,7 +1069,7 @@ namespace Ws_OLS
 
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
-                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + rowDeta["IdProductos"].ToString() + "|" + Convert.ToDouble(rowDeta["Unidades"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
+                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + Convert.ToDouble(rowDeta["Unidades"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
                                     codTributo = null,
                                     tributos = null,
                                     //precioUnitario = _facturas.GetPrecioUnitarioDetalleFAC(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
@@ -1804,7 +1806,7 @@ namespace Ws_OLS
                                 new Detalle
                                 {
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
-                                    descripcion = _facturasSala.GetCodigoSap(rowDeta["IdPlu"].ToString()) + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreSAP(rowDeta["IdPlu"].ToString()) + "|" + rowDeta["IdPlu"].ToString() + "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
+                                    descripcion = _facturasSala.GetCodigoSap(rowDeta["IdPlu"].ToString()) + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreSAP(rowDeta["IdPlu"].ToString()) + "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
                                     codTributo = null,
                                     tributos = new List<string>() { "20" },
                                     //precioUnitario = _facturas.GetPrecioUnitarioDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
@@ -1877,7 +1879,7 @@ namespace Ws_OLS
 
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
                                     //descripcion = rowDeta["IdProductos"].ToString() + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|",
-                                    descripcion = _facturasSala.GetCodigoSap(rowDeta["IdPlu"].ToString()) + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreSAP(rowDeta["IdPlu"].ToString()) + "|" + rowDeta["IdPlu"].ToString() + "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
+                                    descripcion = _facturasSala.GetCodigoSap(rowDeta["IdPlu"].ToString()) + "|" + "PLU:" + rowDeta["IdPlu"].ToString() + "|" + _facturasSala.GetNombreSAP(rowDeta["IdPlu"].ToString()) +  "|" + Convert.ToDouble(rowDeta["Cantidad"].ToString()) + "|" + Convert.ToDouble(rowDeta["Peso"].ToString()) + "|",
                                     codTributo = null,
                                     tributos = null,
                                     //precioUnitario = _facturas.GetPrecioUnitarioDetalleFAC(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()), //-
@@ -2358,6 +2360,11 @@ namespace Ws_OLS
                         maindata.campo2 = maindata.campo2 + "GT57|";
                     }
 
+                    
+
+                    maindata.campo2 = ipImpresora + "|" + maindata.campo2;
+                    maindata.campo2 = maindata.campo2 + _facturas.GetRutaVenta(row["IdCliente"].ToString()) + "|" + _facturas.GetRutaReparto(ruta.ToString());
+                    maindata.campo2 = maindata.campo2 + "||||"+ _facturas.GetNumeroFacturaSGR_Preimpresa(row["idPedido"].ToString())+"|||||||"+_facturas.GetUsuarioGeneraPreImpresa(row["IdUsuarioGenera"].ToString())+"||";
                     if (row["Factura"].ToString() == "" || row["Factura"].ToString() == "0") //revisa la secuencia
                     {
                         maindata.campo2 = maindata.campo2 + "000";
@@ -2366,9 +2373,7 @@ namespace Ws_OLS
                     {
                         maindata.campo2 = maindata.campo2 + _facturas.GetSecuencia(row["idFactura"].ToString());
                     }
-
-                    maindata.campo2 = ipImpresora + "|" + maindata.campo2;
-                    maindata.campo2 = maindata.campo2 + "|" + _facturas.GetRutaVenta(row["IdCliente"].ToString()) + "|" + _facturas.GetRutaReparto(ruta.ToString());
+                    maindata.campo2 = maindata.campo2 + "OC:" + _facturas.GetOrdenCompraPreImpresa(row["idFactura"].ToString());
                     maindata.campo3 = "";
                     //maindata.campo3 = campo3X;
                     //maindata.campo4 = _facturas.GetRutaReparto(ruta.ToString());
@@ -2430,6 +2435,8 @@ namespace Ws_OLS
                     maindata.tipoDocumentoReceptor = tipoDocTempNIT;
                     maindata.formatodocumento = "carta";
 
+                    maindata.campoExtFE = "OrdenCompra|Número de Orden de Compra|" + _facturas.GetOrdenCompraPreImpresa(row["idFactura"].ToString())+"|||";
+
                     ListaOLS.Add(maindata);
 
                     #endregion Cabecera
@@ -2470,25 +2477,29 @@ namespace Ws_OLS
 
                             //cantidadTem = _facturas.GetCantidadDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString());
 
-                            if (_facturas.CompruebaUnidadMedida(rowDeta["IdProductos"].ToString()) == "1")
+                            //if (_facturas.CompruebaUnidadMedida(rowDeta["IdProductos"].ToString()) == "1")
+                            if (_facturas.CompruebaUnidadMedidaPreimpresa(rowDeta["IdProductos"].ToString()) == "1")
                             {
-                                cantidadTem = _facturas.GetCantidadDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString());
+                                cantidadTem = _facturas.GetCantidadDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString());
                             }
                             else
                             {
-                                cantidadTem = _facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString());
+                                cantidadTem = _facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString());
                             }
 
                             detalleOLS.Add(
                                 new Detalle
                                 {
                                     //descripcion = rowDeta["idProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["idProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["idProductos"].ToString(), row["idCliente"].ToString()) + "|",
-                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + rowDeta["IdProductos"].ToString() + "|" + _facturas.GetUnidadesDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) + " UN"+ "|" + _facturas.GetPesoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString())+ " LB"+"|",
+                                    //descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProductoPreimpresas(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + _facturas.GetUnidadesDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) + " UN"+ "|" + _facturas.GetPesoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString())+ " LB"+"|",
+                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProductoPreimpresas(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + rowDeta["Unidades"].ToString() + " UN"+ "|" + rowDeta["Peso"].ToString() + " LB"+"|",
                                     codTributo = "",
                                     tributos = new List<string>() { "20" },
-                                    precioUnitario = _facturas.GetPrecioUnitarioDetallePreImpresaCCF(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
+                                    //precioUnitario = _facturas.GetPrecioUnitarioDetallePreImpresaCCF(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
+                                    precioUnitario = _facturas.GetPrecioUnitarioDetallePreImpresaCCF(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString()),
+                                    //precioUnitario = rowDeta["PrecioUnitario"],
                                     ventasNoSujetas = 0,
-                                    ivaItem = _facturas.GetIVALineaFacPreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
+                                    ivaItem = _facturas.GetIVALineaFacPreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString()),
                                     delAl = "",
                                     exportaciones = "0.0",
                                     numDocRel = "",
@@ -2501,7 +2512,7 @@ namespace Ws_OLS
                                     //cantidad = _facturas.GetCantidadDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
                                     cantidad = cantidadTem,
                                     //ventasGravadas = _facturas.GetVentasGravadasDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()),
-                                    ventasGravadas = _facturas.GetVentasGravadasDetalleCCFPreImpresa(row["idFactura"].ToString(), rowDeta["IdProductos"].ToString()),
+                                    ventasGravadas = _facturas.GetVentasGravadasDetalleCCFPreImpresa(row["idFactura"].ToString(), rowDeta["IdProductos"].ToString(), rowDeta["NumeroLinea"].ToString()),
                                     ivaRetenido = 0.0,
                                     //desc = _facturas.GetDescuentoPrecioDetallePreImpresa(row["idFactura"].ToString(), rowDeta["IdProductos"].ToString()),
                                     desc = "0.0",
@@ -2517,13 +2528,13 @@ namespace Ws_OLS
                     {
                         foreach (DataRow rowDeta in DetalleFactura.Rows)
                         {
-                            if (_facturas.CompruebaUnidadMedida(rowDeta["IdProductos"].ToString()) == "1")
+                            if (_facturas.CompruebaUnidadMedidaPreimpresa(rowDeta["IdProductos"].ToString()) == "1")
                             {
-                                cantidadTem = _facturas.GetCantidadDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString());
+                                cantidadTem = _facturas.GetCantidadDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString());
                             }
                             else
                             {
-                                cantidadTem = _facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString());
+                                cantidadTem = _facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString());
                             }
 
                             Detalle detalle = new Detalle();
@@ -2542,11 +2553,12 @@ namespace Ws_OLS
                                     //exportaciones = "0.0"
 
                                     //descripcion = rowDeta["idProductos"].ToString() + "|" + (_facturas.GetPesoProductoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _facturas.GetNombreProducto(rowDeta["idProductos"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["idProductos"].ToString(), row["idCliente"].ToString()) + "|",
-                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProducto(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|" + rowDeta["IdProductos"].ToString() + "|" + _facturas.GetUnidadesDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) + " UN"+ "|" + _facturas.GetPesoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) +" LB"+ "|",
+                                    //descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProductoPreimpresas(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|"  + _facturas.GetUnidadesDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) + " UN"+ "|" + _facturas.GetPesoDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()) +" LB"+ "|",
+                                    descripcion = rowDeta["IdProductos"].ToString() + "|" + "PLU:" + _facturas.GetPLUProductoPreimpresas(rowDeta["IdProductos"].ToString(), row["IdCliente"].ToString()) + "|" + _facturas.GetNombreProducto(rowDeta["IdProductos"].ToString()) + "|"  + rowDeta["Unidades"].ToString() + " UN"+ "|" + rowDeta["Peso"].ToString() + " LB"+ "|",
                                     tributos = null,
-                                    precioUnitario = _facturas.GetPrecioUnitarioDetalleFACPreImpreso(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
+                                    precioUnitario = _facturas.GetPrecioUnitarioDetalleFACPreImpreso(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString()),
                                     ventasNoSujetas = 0,
-                                    ivaItem = _facturas.GetIVALineaFacPreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
+                                    ivaItem = _facturas.GetIVALineaFacPreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString()),
                                     delAl = "",
                                     exportaciones = "0.0",
                                     numDocRel = "",
@@ -2559,7 +2571,7 @@ namespace Ws_OLS
                                     //cantidad = _facturas.GetCantidadDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
                                     cantidad = cantidadTem,
                                     //ventasGravadas = _facturas.GetVentasGravadasDetalle(ruta, row["Numero"].ToString(), rowDeta["IdProductos"].ToString()),
-                                    ventasGravadas = _facturas.GetVentasGravadasDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString()),
+                                    ventasGravadas = _facturas.GetVentasGravadasDetallePreImpresa(row["idFactura"].ToString(), rowDeta["idProductos"].ToString(), rowDeta["NumeroLinea"].ToString()),
                                     ivaRetenido = 0.0,
                                     //desc = _facturas.GetDescuentoPrecioDetallePreImpresa(row["idFactura"].ToString(), rowDeta["IdProductos"].ToString()),
                                     desc = "0.0",
@@ -2829,9 +2841,9 @@ namespace Ws_OLS
                     maindata.tipoTransmision = "1";
                     maindata.codContingencia = "";
                     maindata.motivoContin = null;
-                    maindata.docRelTipo = "";
-                    maindata.docRelNum = "";
-                    maindata.docRelFecha = "";
+                    maindata.docRelTipo = "03";
+                    maindata.docRelNum = maindata.CCFAnterior;
+                    maindata.docRelFecha = _nCreditos.GetDocfec(row["ZNROCF"].ToString()).ToString("yyyy-MM-dd");
                     maindata.nombreComercialCl = "";
                     maindata.otrosDocIdent = "";
                     maindata.otrosDocDescri = "";

@@ -454,7 +454,15 @@ namespace Ws_OLS.Clases
                                     INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura
                                     AND FF.idCliente=LE.idClienteDestinatario
                                     AND LE.idRutaReparto=FF.idRutaReparto
-                                    AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idFactura";
+                                    AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idFactura
+                                    UNION ALL
+                                    SELECT FF.FELSerie
+                                    FROM handheld.FacturaEBajada FF
+                                    INNER JOIN Liquidaciones.FacturasE LE ON CONVERT(BIGINT,FF.numero)=CONVERT(BIGINT,LE.FACTURA)
+                                    INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura
+                                    AND FF.idCliente=LE.idClienteDestinatario
+                                    AND LE.idRutaReparto=FF.IdRuta
+                                    AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -470,6 +478,46 @@ namespace Ws_OLS.Clases
             }
 
             return data;
+        }
+
+        public DateTime GetDocfec(string idFactura)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            //using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT CONVERT(DATE,FF.FechaFactura) Fecha
+                                    FROM Facturacion.FacturaE FF
+                                    INNER JOIN Liquidaciones.FacturasE LE ON CONVERT(BIGINT,FF.FACTURA)=CONVERT(BIGINT,LE.FACTURA)
+                                    INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura
+                                    AND FF.idCliente=LE.idClienteDestinatario
+                                    AND LE.idRutaReparto=FF.idRutaReparto
+                                    AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idfactura
+                                    --and n.Fecha=converT(Date,getdate())
+                                    union
+                                    SELECT CONVERT(DATE,FF.Fecha) Fecha
+                                    FROM handheld.FacturaEBajada FF
+                                    INNER JOIN Liquidaciones.FacturasE LE ON CONVERT(BIGINT,FF.numero)=CONVERT(BIGINT,LE.FACTURA)
+                                    INNER JOIN Liquidaciones.NotasEncabezado N ON N.idFactura = LE.idFactura
+                                    AND FF.idCliente=LE.idClienteDestinatario
+                                    AND LE.idRutaReparto=FF.IdRuta
+                                    AND N.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(N.NumeroFormulario))), 8)=@idfactura";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idFactura", idFactura);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDateTime(data);
         }
 
         //CAMPO FEL-OBTIENE CODIGO DE GENERACION

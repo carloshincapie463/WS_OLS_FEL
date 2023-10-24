@@ -111,6 +111,7 @@
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <None Include="Properties\PublishProfiles\PRD OLS WS.pubxml" />
     <Content Include="Web.config" />
+    <None Include="Properties\PublishProfiles\QA NUEVO.pubxml" />
     <None Include="Properties\PublishProfiles\QA OLS WS.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
