@@ -2385,12 +2385,13 @@ namespace Ws_OLS.Clases
             using (SqlConnection cnn = new SqlConnection(connectionString))
             {
                 cnn.Open();
-                string sqlQuery = @"select plu From (
-                                    select * from Facturacion.plu union 
-                                    select 
-                                    idcliente,idproductos,plu
-                                    From pedidos.ProductosCodigosPLU) as t
-                                    WHERE IdProductos = @prod AND IdCliente=@cliente";
+                string sqlQuery = @"select PLU from Facturacion.plu
+                                   WHERE IdProductos = @prod AND IdCliente=(select codigoclienteprincipal from sap.clientes where idcliente=@cliente)
+                                    union
+                                    select
+                                    plu
+                                    From pedidos.ProductosCodigosPLU as t
+                                    WHERE IdProductos = @prod AND IdCliente=(select codigoclienteprincipal from sap.clientes where idcliente=@cliente)";
 
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))

@@ -276,9 +276,10 @@ namespace Ws_OLS.Clases
                 string sqlQuery = "";
                 cnn.Open();
 
-                sqlQuery = @"SELECT idCliente
-                                    FROM Liquidaciones.NotasEncabezado
-                                    WHERE Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
+                sqlQuery = @"SELECT ISNULL(fe.idClienteDestinatario ,n.idCliente )
+                            FROM Liquidaciones.NotasEncabezado N 
+                            LEFT JOIN Liquidaciones.FacturasE fe  on n.idFactura =fe.idFactura
+                            WHERE n.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(NumeroFormulario))), 8)=@idFactura";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
                 {
@@ -810,6 +811,34 @@ namespace Ws_OLS.Clases
             {
                 cnn.Open();
                 string sqlQuery = @"SELECT D.Peso
+                                    FROM Liquidaciones.NotasDetalle D
+                                    INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
+                                    WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, cnn))
+                {
+                    cmd.Parameters.AddWithValue("@idFactura", numero);
+                    cmd.Parameters.AddWithValue("@producto", producto);
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    while (dr.Read())
+                    {
+                        data = dr[0].ToString();
+                    }
+                }
+
+                cnn.Close();
+            }
+
+            return Convert.ToDouble(data);
+        }
+
+        public double GetUnidadesProductoDetalle(string numero, string producto)
+        {
+            string data = "";
+            using (SqlConnection cnn = new SqlConnection(connectionString))
+            {
+                cnn.Open();
+                string sqlQuery = @"SELECT D.Unidades
                                     FROM Liquidaciones.NotasDetalle D
                                     INNER JOIN Liquidaciones.NotasEncabezado E ON E.Numero = D.Numero
                                     WHERE E.Serie  + RIGHT('00000000' + LTRIM(RTRIM(STR(E.NumeroFormulario))), 8)=@idFactura AND D.idProductos=@producto";

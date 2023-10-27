@@ -1426,7 +1426,15 @@ namespace Ws_OLS
                             }
                             else
                             {
-                                tipoDocTempNIT = "DUI";
+                                if (nitClienteString.Trim().Length > 9)
+                                {
+                                    tipoDocTempNIT = "NIT";
+                                }
+                                else
+                                {
+                                    tipoDocTempNIT = "DUI";
+                                }
+                                
                             }
                         }
                         else
@@ -2764,7 +2772,19 @@ namespace Ws_OLS
                     maindata.codicionPago = "";
                     //maindata.ventaTotal = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
 
-                    maindata.ventaTotal = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
+                   
+                    string percepcion = row["Percepcion"].ToString();
+                    if (!string.IsNullOrEmpty(percepcion))
+                    {
+                        //maindata.subTotalVentasGravadas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"]) - Convert.ToDecimal(row["Percepcion"]));
+                        //maindata.ventasGravadas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"]);
+                        maindata.ventaTotal = Convert.ToDouble(Convert.ToDecimal(row["Total"]));
+                    }
+                    else
+                    {
+                        //maindata.ventasGravadas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
+                        maindata.ventaTotal = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
+                    }
                     maindata.montoLetras = _facturas.GetMontoLetras(maindata.ventaTotal).Trim();
                     maindata.CCFAnterior = _nCreditos.GetCCFAnteriorNC(row["ZNROCF"].ToString()); //123
                     maindata.vtaACuentaDe = "";
@@ -2786,6 +2806,7 @@ namespace Ws_OLS
                     maindata.sumas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
                     maindata.subTotalVentasExentas = 0;
                     maindata.subTotalVentasNoSujetas = 0;
+
                     maindata.subTotalVentasGravadas = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
                     maindata.iva = Convert.ToDouble(_nCreditos.GetIvaNc(row["ZNROCF"].ToString()));
                     maindata.renta = 0;
@@ -2805,15 +2826,16 @@ namespace Ws_OLS
                     maindata.ivaPercibido1 = Convert.ToDouble(_nCreditos.GetPercepcionNc(row["ZNROCF"].ToString()));
                     //maindata.ivaPercibido1 = Convert.ToDouble(_nCreditos.GetTotalNc(row["ZNROCF"].ToString()));
                     maindata.ivaPercibido2 = 0;
-                    string percepcion = _nCreditos.GetPercepcionNc(row["ZNROCF"].ToString());
-                    if (string.IsNullOrEmpty(percepcion))
-                    {
-                        maindata.ivaRetenido1 = 0;
-                    }
-                    else
-                    {
-                        maindata.ivaRetenido1 = Convert.ToDouble(_nCreditos.GetPercepcionNc(row["ZNROCF"].ToString()));
-                    }
+                    maindata.ivaRetenido1 = 0;
+                    //string percepcion = _nCreditos.GetPercepcionNc(row["ZNROCF"].ToString());
+                    //if (string.IsNullOrEmpty(percepcion))
+                    //{
+                    //    maindata.ivaRetenido1 = 0;
+                    //}
+                    //else
+                    //{
+                    //    maindata.ivaRetenido1 = Convert.ToDouble(_nCreditos.GetPercepcionNc(row["ZNROCF"].ToString()));
+                    //}
                     maindata.ivaRetenido13 = 0;
                     maindata.contribucionSeguridad = 0;
                     maindata.fovial = 0;
@@ -2824,12 +2846,27 @@ namespace Ws_OLS
                     maindata.cesc = 0;
                     maindata.observacionesDte = "";
                     maindata.campo1 = "";
-                    maindata.campo2 = _facturas.GetCodigoClientePrincipal(maindata.codigoCliente) + "|" + maindata.codigoCliente + "|" + _facturas.GetCentro(ruta.ToString()) + "|" + _facturas.GetZonaRuta(ruta.ToString()) + _facturas.GetCodigoRutaVenta(ruta.ToString()) + "|GT10";
-                    maindata.campo3 = _facturas.GetRutaVenta(maindata.codigoCliente);
-                    maindata.campo4 = _facturas.GetRutaReparto(ruta.ToString());
+                    //maindata.campo2 = _facturas.GetCodigoClientePrincipal(maindata.codigoCliente) + "|" + maindata.codigoCliente + "|" + _facturas.GetCentro(ruta.ToString()) + "|" + _facturas.GetZonaRuta(ruta.ToString()) + _facturas.GetCodigoRutaVenta(ruta.ToString()) + "|GT10";
+                    //maindata.campo3 = _facturas.GetRutaVenta(maindata.codigoCliente);
+                    //maindata.campo4 = _facturas.GetRutaReparto(ruta.ToString());
+
+                    //maindata.campo2 = ipImpresora + "|" + maindata.campo2;
+
+                    maindata.campo2 = maindata.codigoCliente + "|" + _facturas.GetCodigoClientePrincipal(maindata.codigoCliente) + "|" + _facturas.GetCentro(ruta.ToString()) + "|" + _facturas.GetZonaRuta(ruta.ToString()) + "|" + _facturas.GetCodigoRutaVenta(ruta.ToString()) + "|GT10|";
 
                     maindata.campo2 = ipImpresora + "|" + maindata.campo2;
-                    maindata.campo2 = maindata.campo2 + "|" + _facturas.GetRutaVenta(maindata.codigoCliente) + "|" + _facturas.GetRutaReparto(ruta.ToString());
+                    maindata.campo2 = maindata.campo2 + _facturas.GetRutaVenta(maindata.codigoCliente) + "|" + _facturas.GetRutaReparto(ruta.ToString());
+                    maindata.campo2 = maindata.campo2 + "|||||||||||" + _facturas.GetUsuarioGeneraPreImpresa(row["IdUsuarioCreacion"].ToString()) + "||";
+                    //if (row["Factura"].ToString() == "" || row["Factura"].ToString() == "0") //revisa la secuencia
+                    //{
+                    //    maindata.campo2 = maindata.campo2 + "000";
+                    //}
+                    //else
+                    //{
+                    //    maindata.campo2 = maindata.campo2 + _facturas.GetSecuencia(row["idFactura"].ToString());
+                    //}
+                    //maindata.campo2 = maindata.campo2 + "OC:" + _facturas.GetOrdenCompraPreImpresa(row["idFactura"].ToString());
+                    //maindata.campo2 = maindata.campo2 + "|" + _facturas.GetRutaVenta(maindata.codigoCliente) + "|" + _facturas.GetRutaReparto(ruta.ToString());
                     maindata.campo3 = "";
                     //maindata.campo3 = campo3X;vueno
                     //maindata.campo4 = _facturas.GetRutaReparto(ruta.ToString());
@@ -2853,7 +2890,19 @@ namespace Ws_OLS
                     maindata.montGDescVentExentas = 0.0;
                     maindata.montGDescVentGrav = 0.0;
                     maindata.totOtroMonNoAfec = 0.0;
-                    maindata.totalAPagar = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
+                    percepcion = row["Percepcion"].ToString();
+                    if (!string.IsNullOrEmpty(percepcion))
+                    {
+                        //maindata.subTotalVentasGravadas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"]) - Convert.ToDecimal(row["Percepcion"]));
+                        //maindata.ventasGravadas = Convert.ToDouble(Convert.ToDecimal(row["TotalFactura"]);
+                        maindata.totalAPagar = Convert.ToDouble(Convert.ToDecimal(row["Total"]));
+                    }
+                    else
+                    {
+                        //maindata.ventasGravadas = Convert.ToDouble(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString()));
+                        maindata.totalAPagar = Convert.ToDouble(Convert.ToDecimal(_nCreditos.GetSubTotalNc(row["ZNROCF"].ToString())) + Convert.ToDecimal(_nCreditos.GetIvaNc(row["ZNROCF"].ToString())));
+                    }
+                    
                     //maindata.totalAPagar = Convert.ToDouble(_nCreditos.GetTotalNc(row["ZNROCF"].ToString()));
                     maindata.responsableEmisor = "";
                     maindata.numDocEmisor = "";
@@ -2938,7 +2987,9 @@ namespace Ws_OLS
                                 //delAl = "",
                                 //exportaciones = "0.0"
 
-                                descripcion = rowDeta["MATNR"].ToString() + "|" + (_nCreditos.GetPesoProductoDetalle(row["ZNROCF"].ToString(), rowDeta["MATNR"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _nCreditos.GetNombreProducto(rowDeta["MATNR"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["MATNR"].ToString(), _nCreditos.GetClienteNC(row["ZNROCF"].ToString())) + "|",
+                                //descripcion = rowDeta["MATNR"].ToString() + "|" + (_nCreditos.GetPesoProductoDetalle(row["ZNROCF"].ToString(), rowDeta["MATNR"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + "|" + _nCreditos.GetNombreProducto(rowDeta["MATNR"].ToString()) + "|" + _facturas.GetPLUProducto(rowDeta["MATNR"].ToString(), _nCreditos.GetClienteNC(row["ZNROCF"].ToString())) + "|",
+                                descripcion = rowDeta["MATNR"].ToString() + "|" + "PLU:" + _facturas.GetPLUProductoPreimpresas(rowDeta["MATNR"].ToString(), maindata.codigoCliente) + "|" + _facturas.GetNombreProducto(rowDeta["MATNR"].ToString()) + "|" + (_nCreditos.GetUnidadesProductoDetalle(row["ZNROCF"].ToString(), rowDeta["MATNR"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + " UN" + "|" + (_nCreditos.GetPesoProductoDetalle(row["ZNROCF"].ToString(), rowDeta["MATNR"].ToString()).ToString("F", CultureInfo.InvariantCulture)) + " LB" + "|",
+                                //codTributo = "",
                                 codTributo = null,
                                 tributos = new List<string>() { "20" },
                                 precioUnitario = _nCreditos.GetPrecioUnitarioDetalle(row["ZNROCF"].ToString(), rowDeta["MATNR"].ToString()),
