@@ -1,0 +1,98 @@
+name: cd
+
+on:
+  push:
+    branches:
+      - release
+      - develop
+
+jobs:
+  build:
+    runs-on: self-hosted-cmi
+    name: build
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: setup-msbuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
+
+      - name: Restore Packages
+        run: nuget restore Ws_OLS_FEL.sln
+
+      - name: Build solution
+        run: msbuild Ws_OLS_FEL.sln -t:rebuild -property:Configuration=Release
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: dist-files
+          path: |
+            Ws_OLS
+
+  DeployTest:
+    environment: testing
+    env:
+      ACTIONS_STEP_DEBUG: true
+      IP_DEPLOY: ${{secrets.IP_DEPLOY}}
+      USERNAME_DEPLOY: ${{secrets.USERNAME_DEPLOY}}
+      PASSWORD_DEPLOY: ${{secrets.PASSWORD_DEPLOY}}
+      DIRECTORYDESTINY: ${{secrets.DIRECTORYDESTINY}}
+      APPPOOLNAME: ${{secrets.APPPOOLNAME}}
+      USUARIO: ${{secrets.USUARIO}}
+      USERNAME: ${{secrets.USERNAME}}
+      PASSWORDHEAD: ${{secrets.PASSWORDHEAD}}
+      PASSWORD: ${{secrets.PASSWORD}}
+      IPES: ${{secrets.IPES}}
+      IPES_SALA: ${{secrets.IPES_SALA}}
+    needs: build
+    runs-on: self-hosted-cmi
+    name: deploytest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-files
+          path: dist-files
+      - name: Output contents
+        shell: powershell
+        run: |
+          $ORIGIN = "dist-files"
+          ./updateconfig.ps1 "$($ORIGIN)/web.config" ${{vars.TOKEN}} ${{vars.ENVIOJSON}} ${{vars.ENVIOJSONANULACION}} ${{vars.REVISALINEA}} ${{vars.INFOFACTURA}} ${{env.USUARIO}} ${{env.PASSWORDHEAD}} ${{env.USERNAME}} ${{env.PASSWORD}} ${{vars.IDCOMPANY}} ${{vars.AMBIENTE}} ${{env.IPES}} ${{env.IPES_SALA}}
+          ./deploy.ps1 ${{ env.IP_DEPLOY }} $ORIGIN ${{env.USERNAME_DEPLOY}} ${{env.PASSWORD_DEPLOY}} "${{ env.DIRECTORYDESTINY }}" "${{ env.APPPOOLNAME }}"
+
+  DeployProd:
+    environment: prod
+    env:
+      ACTIONS_STEP_DEBUG: true
+      IP_DEPLOY: ${{secrets.IP_DEPLOY}}
+      USERNAME_DEPLOY: ${{secrets.USERNAME_DEPLOY}}
+      PASSWORD_DEPLOY: ${{secrets.PASSWORD_DEPLOY}}
+      DIRECTORYDESTINY: ${{secrets.DIRECTORYDESTINY}}
+      APPPOOLNAME: ${{secrets.APPPOOLNAME}}
+      USUARIO: ${{secrets.USUARIO}}
+      USERNAME: ${{secrets.USERNAME}}
+      PASSWORDHEAD: ${{secrets.PASSWORDHEAD}}
+      PASSWORD: ${{secrets.PASSWORD}}
+      IPES: ${{secrets.IPES}}
+      IPES_SALA: ${{secrets.IPES_SALA}}
+    needs: DeployTest
+    runs-on: self-hosted-cmi
+    name: deployprod
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-files
+          path: dist-files
+      - name: Output contents
+        shell: powershell
+        run: |
+          $ORIGIN = "dist-files"
+          ./updateconfig.ps1 "$($ORIGIN)/web.config" ${{vars.TOKEN}} ${{vars.ENVIOJSON}} ${{vars.ENVIOJSONANULACION}} ${{vars.REVISALINEA}} ${{vars.INFOFACTURA}} ${{env.USUARIO}} ${{env.PASSWORDHEAD}} ${{env.USERNAME}} ${{env.PASSWORD}} ${{vars.IDCOMPANY}} ${{vars.AMBIENTE}} ${{env.IPES}} ${{env.IPES_SALA}}
+          ./deploy.ps1 ${{ env.IP_DEPLOY }} $ORIGIN ${{env.USERNAME_DEPLOY}} ${{env.PASSWORD_DEPLOY}} "${{ env.DIRECTORYDESTINY }}" "${{ env.APPPOOLNAME }}"

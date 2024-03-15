@@ -1,33 +1,181 @@
-name: Build .Net 
-
-on:  
-  push:
-    branches: [ main ]
+name: ci
+on: 
   pull_request:
-    branches: [ main ]
-
-jobs:  
-  build:    
+    branches:
+      - develop
+      - main
+env:
+  PROJECT_NAME: '${{secrets.PROJECT_NAME}}'
+  PROJECT_KEY: '${{secrets.PROJECT_KEY}}'
+  SONAR_TOKEN: '${{ secrets.SONAR_TOKEN }}'
+  SONAR_URL: '${{secrets.SONAR_HOST_URL}}'
+jobs:
+  build:
     runs-on: windows-2019
-    
-    steps:      
-      - uses: actions/checkout@v2
-      
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
-
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: setup-msbuild
+        uses: microsoft/setup-msbuild@v1.1
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1.0.5
-        
-      - name: Setup VSTest
-        uses: darenm/Setup-VSTest@v1
-
-      - name: Navigate to Workspace
-        run: cd $GITHUB_WORKSPACE
-
       - name: Restore Packages
         run: nuget restore Ws_OLS_FEL.sln
+      - name: Build solution
+        run: >-
+          msbuild Ws_OLS_FEL.sln -t:rebuild -verbosity:diag
+          -property:Configuration=Release
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: dist-files
+          path: |
+            Ws_OLS
+  test:
+    needs: build
+    runs-on: windows-2019
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: setup-msbuild
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
+      - name: Restore Packages
+        run: nuget restore Ws_OLS_FEL.sln
+      - name: Test solution
+        run: 'msbuild Ws_OLS_FEL.sln -t:rebuild -property:Configuration=Release'
+      - name: Run dotnet test
+        run: dotnet test --logger trx --results-directory "TestResults"
+      - name: Upload dotnet test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-results
+          path: TestResults
+        if: '${{ always() }}'
+  sonarcloud:
+    needs: test
+    runs-on: windows-2019
+    name: SonarCloud
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: setup-msbuild
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
+      - name: Restore Packages
+        run: nuget restore Ws_OLS_FEL.sln
+      - name: Cache SonarCloud workspace
+        uses: actions/cache@v4
+        with:
+          path: ~\.sonar\cache
+          key: '${{ runner.os }}-sonar-cache'
+          restore-keys: '${{ runner.os }}-sonar-cache'
+      - name: Change Version of Java to JDK17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Version jdk current after change
+        shell: cmd
+        run: java -version
+      - name: Cache SonarCloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v3
+        with:
+          path: .\.sonar\scanner
+          key: '${{ runner.os }}-sonar-scanner'
+          restore-keys: '${{ runner.os }}-sonar-scanner'
+      - name: Install SonarCloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
+        run: >
+          New-Item -Path .\.sonar\scanner -ItemType Directory
 
-      - name: Build Solution
-        run: |
-          msbuild.exe Ws_OLS_FEL.sln /p:platform="Any CPU" /p:configuration="Release"
+          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+          --version 6.0.0
+      - name: Scanner with SonarCloud
+        shell: powershell
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        run: >
+          .\.sonar\scanner\dotnet-sonarscanner begin /n:"${{ env.PROJECT_NAME
+          }}" /k:"${{ env.PROJECT_KEY }}" /o:"santi995" /d:sonar.token="${{
+          env.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+
+          msbuild WS_OLS_FEL.sln
+
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{
+          env.SONAR_TOKEN }}"
+
+  CodeQL:
+    needs: sonarcloud
+    name: Analyze codeQl
+    # runs-on: self-hosted-cmi
+    runs-on: windows-2019
+    timeout-minutes: 160
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+        queries: security-extended # security-and-quality
+        external-repository-token: ${{ secrets.ACCESS_TOKEN }}
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+
+        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        # queries: security-extended,security-and-quality
+
+    # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
+    # If this step fails, then you should remove it and run the build manually (see below)
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    # ℹ️ Command-line programs to run using the OS shell.
+    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+
+    #   If the Autobuild fails above, remove it and uncomment the following three lines.
+    #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
+
+    # - run: |
+    #     echo "Run, Build Application using script"
+    #     ./location_of_script_within_repo/buildscript.sh
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:csharp"
+        # category: "/language:${{matrix.language}}"
+
+  Dependency_Review:
+    runs-on: windows-2019
+    needs: CodeQL
+    name: Dependency_Review
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: 'LGPL-2.0, BSD-2-Clause'
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
